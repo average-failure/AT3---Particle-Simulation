@@ -1,8 +1,10 @@
 import { SpatialHash } from "./spatial_hash.mjs";
 
 class Simulation extends SpatialHash {
-  constructor(cellSize) {
+  constructor(cellSize, maxRadius) {
     super(cellSize);
+
+    this.maxRadius = maxRadius;
 
     this.methods = [
       "animate",
@@ -17,24 +19,25 @@ class Simulation extends SpatialHash {
 
   #onMessage({ data: message }) {
     for (const method of this.methods) {
-      if (message[method] !== undefined) this[method]?.(message[method]);
+      if (message.hasOwnProperty(method)) {
+        this[method]?.(message[method]);
+      }
     }
   }
 
   resizeCanvas({ width, height }) {
-    this.canvas.width = this.drawCanvas.width = width;
-    this.canvas.height = this.drawCanvas.height = height;
+    this.width = this.canvas.width = this.drawCanvas.width = width;
+    this.height = this.canvas.height = this.drawCanvas.height = height;
   }
 
   addCanvas(canvas) {
     this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d", { alpha: false });
+    this.ctx = canvas.getContext("2d", { alpha: false });
     this.drawCanvas = new OffscreenCanvas(
-      this.canvas.width,
-      this.canvas.height
+      (this.width = canvas.width),
+      (this.height = canvas.height)
     );
     this.drawCtx = this.drawCanvas.getContext("2d", { alpha: false });
-    console.log(this);
   }
 
   mouseCollision({ mx, my, bounds }) {
@@ -45,9 +48,9 @@ class Simulation extends SpatialHash {
   }
 
   #draw() {
-    this.drawCtx.clearRect(0, 0, this.drawCanvas.width, this.drawCanvas.height);
+    this.drawCtx.clearRect(0, 0, this.width, this.height);
     for (const particle of this.particles) {
-      particle.update(this.drawCanvas.width, this.drawCanvas.height);
+      particle.update(this.width, this.height);
       particle.draw(this.drawCtx);
     }
 
@@ -56,7 +59,10 @@ class Simulation extends SpatialHash {
 
   #calculations() {
     for (const particle of this.particles)
-      for (const near of this.findNear(particle, particle.radius * 2))
+      for (const near of this.findNear(
+        particle,
+        particle.radius + this.maxRadius
+      ))
         particle.detectCollision(near);
   }
 
@@ -67,4 +73,6 @@ class Simulation extends SpatialHash {
   }
 }
 
-new Simulation(15);
+const CELL_SIZE = 15,
+  MAX_RADIUS = 50;
+new Simulation(CELL_SIZE, MAX_RADIUS);

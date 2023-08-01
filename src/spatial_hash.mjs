@@ -13,11 +13,11 @@ export class SpatialHash {
     return `${Math.floor(x / this.cellSize)},${Math.floor(y / this.cellSize)}`;
   }
 
-  newParticle(particle) {
+  newParticle(particle = {}) {
     const {
-        radius = randRangeInt(50, 1),
-        x = randRangeInt(this.canvas.width - radius, radius),
-        y = randRangeInt(this.canvas.height - radius, radius),
+        radius = randRangeInt(this.maxRadius, 1),
+        x = randRangeInt(this.width - radius, radius),
+        y = randRangeInt(this.height - radius, radius),
         vx,
         vy,
         colour,

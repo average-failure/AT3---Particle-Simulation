@@ -4,12 +4,23 @@ const GRAVITY = 9.8,
   DELTA_TIME = 0.1,
   DRAG = 0.999;
 
+const adjustColour = (colour, amount) =>
+  "#" +
+  colour
+    .replace(/^#/, "")
+    .replace(/../g, (colour) =>
+      (
+        "0" +
+        Math.min(255, Math.max(0, parseInt(colour, 16) + amount)).toString(16)
+      ).slice(-2)
+    );
+
 export class Particle {
   constructor(
     x,
     y,
-    vx = randRange(10, -10),
-    vy = randRange(10, -10),
+    vx = randRange(20, -20),
+    vy = randRange(20, -20),
     radius = randRangeInt(50, 1),
     colour = randHex()
   ) {
@@ -20,9 +31,23 @@ export class Particle {
     this.vy = vy;
     this.radius = radius;
     this.colour = colour;
+
+    this.gravity = GRAVITY;
+    this.dt = DELTA_TIME;
+    this.drag = DRAG;
   }
 
   draw(ctx) {
+    /* const grd = ctx.createRadialGradient(
+      this.x,
+      this.y,
+      this.radius / 3,
+      this.x,
+      this.y,
+      this.radius
+    );
+    grd.addColorStop(0, adjustColour(this.colour, 100));
+    grd.addColorStop(1, this.colour); */
     ctx.fillStyle = this.colour;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -110,22 +135,36 @@ export class Particle {
   }
 
   #checkBoundaries(width, height) {
-    if (this.x - this.radius <= 0 || this.x + this.radius >= width)
-      this.vx *= -1;
-    if (this.y - this.radius <= 0 || this.y + this.radius >= height)
-      this.vy *= -1;
+    switch (true) {
+      case this.x - this.radius <= 0:
+        this.x = this.radius;
+        this.vx *= -1;
+        break;
+      case this.x + this.radius >= width:
+        this.x = width - this.radius;
+        this.vx *= -1;
+        break;
+      case this.y - this.radius <= 0:
+        this.y = this.radius;
+        this.vy *= -1;
+        break;
+      case this.y + this.radius >= height:
+        this.y = height - this.radius;
+        this.vy *= -1;
+        break;
+    }
   }
 
   #updatePosition() {
-    this.x += this.vx * DELTA_TIME;
-    this.y += this.vy * DELTA_TIME;
+    this.x += this.vx * this.dt;
+    this.y += this.vy * this.dt;
   }
 
   #updateVelocity() {
-    this.vy += GRAVITY * DELTA_TIME;
+    this.vy += this.gravity * this.dt;
 
-    this.vx *= DRAG;
-    this.vy *= DRAG;
+    this.vx *= this.drag;
+    this.vy *= this.drag;
   }
 
   update(width, height) {

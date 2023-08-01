@@ -6,7 +6,7 @@ class CanvasWrapper {
     this.#onResize();
     addEventListener("resize", this.#onResize.bind(this));
 
-    this.canvas.addEventListener("mousemove", (event) =>
+    /* this.canvas.addEventListener("mousemove", (event) =>
       this.messageWorker({
         mouseCollision: {
           mx: event.clientX,
@@ -14,7 +14,15 @@ class CanvasWrapper {
           bounds: this.canvas.getBoundingClientRect(),
         },
       })
-    );
+    ); */
+
+    this.canvas.addEventListener("mousedown", (event) => {
+      const bounds = this.canvas.getBoundingClientRect();
+      this.newParticle({
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      });
+    });
   }
 
   #initCanvas() {
@@ -57,12 +65,16 @@ class CanvasWrapper {
   messageWorker(message) {
     this.worker.postMessage(message);
   }
+
+  newParticle(particle) {
+    this.messageWorker({ newParticle: particle });
+  }
 }
 
 const wrapper = new CanvasWrapper();
 console.log(wrapper);
 
-for (let i = 0; i < 100; ++i) wrapper.messageWorker({ newParticle: {} });
+for (let i = 0; i < 100; ++i) wrapper.newParticle();
 
 /* for (let x = 0; x < wrapper.width; x += 36)
   for (let y = 0; y < wrapper.height; y += 36)
