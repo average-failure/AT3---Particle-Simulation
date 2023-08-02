@@ -1,4 +1,4 @@
-class CanvasWrapper {
+class Application {
   constructor() {
     this.#initCanvas();
     this.#initWorker();
@@ -71,13 +71,17 @@ class CanvasWrapper {
   }
 }
 
-const wrapper = new CanvasWrapper();
-console.log(wrapper);
+const app = new Application();
+console.log(app);
 
-for (let i = 0; i < 100; ++i) wrapper.newParticle();
+for (let i = 0; i < 100; ++i) app.newParticle(/* { mass: 50 } */);
 
-/* for (let x = 0; x < wrapper.width; x += 36)
-  for (let y = 0; y < wrapper.height; y += 36)
-    wrapper.messageWorker({ newParticle: { x, y, radius: 3 } }); */
+/* for (let x = 0; x < app.width; x += 36)
+  for (let y = 0; y < app.height; y += 36)
+    app.messageWorker({ newParticle: { x, y, mass: 3 } }); */
 
-wrapper.messageWorker({ animate: true });
+app.messageWorker({ animate: true });
+
+addEventListener("error", (error) => {
+  alert(error.message);
+});

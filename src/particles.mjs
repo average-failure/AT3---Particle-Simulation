@@ -1,40 +1,40 @@
-import { randRange, randRangeInt, randHex } from "./utils.mjs";
+import { randHSL, randRange, randRangeInt, randRGB } from "./utils.mjs";
+import { settings } from "./settings.mjs";
 
-const GRAVITY = 9.8,
-  DELTA_TIME = 0.1,
-  DRAG = 0.999;
-
-const adjustColour = (colour, amount) =>
-  "#" +
-  colour
-    .replace(/^#/, "")
-    .replace(/../g, (colour) =>
-      (
-        "0" +
-        Math.min(255, Math.max(0, parseInt(colour, 16) + amount)).toString(16)
-      ).slice(-2)
-    );
+const adjustColour = (colour, amount) => {
+  const components = colour.substring(4, colour.length - 1).split(",");
+  return `rgb(${components[0] + amount},${components[1] + amount},${
+    components[2] + amount
+  })`;
+  /* "#" +
+    colour
+      .replace(/^#/, "")
+      .replace(/../g, (colour) =>
+        (
+          "0" +
+          Math.min(255, Math.max(0, parseInt(colour, 16) + amount)).toString(16)
+        ).slice(-2)
+      ); */
+};
 
 export class Particle {
   constructor(
     x,
     y,
-    vx = randRange(20, -20),
-    vy = randRange(20, -20),
-    radius = randRangeInt(50, 1),
-    colour = randHex()
+    vx = randRange(50, -50),
+    vy = randRange(10),
+    mass = randRangeInt(50, 1)
   ) {
     if (!(x && y)) throw "Error: Position not provided.";
     this.x = x;
     this.y = y;
     this.vx = vx;
     this.vy = vy;
-    this.radius = radius;
-    this.colour = colour;
-
-    this.gravity = GRAVITY;
-    this.dt = DELTA_TIME;
-    this.drag = DRAG;
+    if (
+      (this.radius = (this.mass = mass) / settings.mass_radius_ratio) >
+      settings.max_radius
+    )
+      this.radius = settings.max_radius;
   }
 
   draw(ctx) {
@@ -74,18 +74,18 @@ export class Particle {
   // }
 
   detectCollision(otherParticle) {
-    let dx, dy;
-    const distBetweenSq =
-      (dx = this.x - otherParticle.x) * dx +
-      (dy = this.y - otherParticle.y) * dy;
+    const dx = this.x - otherParticle.x,
+      dy = this.y - otherParticle.y;
+    const distBetweenSq = dx ** 2 + dy ** 2;
 
     if (distBetweenSq <= (this.radius + otherParticle.radius) ** 2) {
+      // * Simple bounce
       /* this.vx *= -1;
       this.vy *= -1;
 
       otherParticle.vx *= -1;
       otherParticle.vy *= -1; */
-
+      // * ChatGPT
       const angle = Math.atan2(dy, dx);
 
       const v1 = {
@@ -138,33 +138,38 @@ export class Particle {
     switch (true) {
       case this.x - this.radius <= 0:
         this.x = this.radius;
-        this.vx *= -1;
+        this.vx = Math.abs(this.vx);
         break;
       case this.x + this.radius >= width:
         this.x = width - this.radius;
-        this.vx *= -1;
+        this.vx = -Math.abs(this.vx);
         break;
       case this.y - this.radius <= 0:
         this.y = this.radius;
-        this.vy *= -1;
+        this.vy = Math.abs(this.vy);
         break;
       case this.y + this.radius >= height:
         this.y = height - this.radius;
-        this.vy *= -1;
+        this.vy = -Math.abs(this.vy);
         break;
     }
   }
 
   #updatePosition() {
-    this.x += this.vx * this.dt;
-    this.y += this.vy * this.dt;
+    this.x += this.vx * settings.dt;
+    this.y += this.vy * settings.dt;
   }
 
   #updateVelocity() {
-    this.vy += this.gravity * this.dt;
+    this.vy += settings.gravity * settings.dt;
 
-    this.vx *= this.drag;
-    this.vy *= this.drag;
+    this.vx *= settings.drag;
+    this.vy *= settings.drag;
+
+    this.colour = `hsl(${(this.colourComp =
+      Math.abs(this.vx / 2) + Math.abs(this.vy / 2))},100%,${
+      this.colourComp / 2 + 30
+    }%)`;
   }
 
   update(width, height) {

@@ -1,5 +1,6 @@
 import { Particle } from "./particles.mjs";
 import { randRangeInt } from "./utils.mjs";
+import { settings } from "./settings.mjs";
 
 export class SpatialHash {
   constructor(cellSize) {
@@ -15,19 +16,24 @@ export class SpatialHash {
 
   newParticle(particle = {}) {
     const {
-        radius = randRangeInt(this.maxRadius, 1),
-        x = randRangeInt(this.width - radius, radius),
-        y = randRangeInt(this.height - radius, radius),
+        mass = randRangeInt(settings.max_mass, 1),
+        x = randRangeInt(
+          this.width - settings.radius(mass),
+          settings.radius(mass)
+        ),
+        y = randRangeInt(
+          this.height - settings.radius(mass),
+          settings.radius(mass)
+        ),
         vx,
         vy,
-        colour,
       } = particle,
       key = this.#hashKey(x, y);
     if (!this.grid[key]) this.grid[key] = new Set();
     const p =
       particle instanceof Particle
         ? particle
-        : new Particle(x, y, vx, vy, radius, colour);
+        : new Particle(x, y, vx, vy, mass);
     this.grid[key].add(p);
     this.particles.push(p);
   }

@@ -1,4 +1,5 @@
 import { SpatialHash } from "./spatial_hash.mjs";
+import { settings } from "./settings.mjs";
 
 class Simulation extends SpatialHash {
   constructor(cellSize, maxRadius) {
@@ -18,11 +19,10 @@ class Simulation extends SpatialHash {
   }
 
   #onMessage({ data: message }) {
-    for (const method of this.methods) {
-      if (message.hasOwnProperty(method)) {
-        this[method]?.(message[method]);
-      }
-    }
+    for (const method of this.methods.filter((method) =>
+      Object.keys(message).includes(method)
+    ))
+      this[method]?.(message[method]);
   }
 
   resizeCanvas({ width, height }) {
@@ -33,11 +33,10 @@ class Simulation extends SpatialHash {
   addCanvas(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d", { alpha: false });
-    this.drawCanvas = new OffscreenCanvas(
+    this.drawCtx = (this.drawCanvas = new OffscreenCanvas(
       (this.width = canvas.width),
       (this.height = canvas.height)
-    );
-    this.drawCtx = this.drawCanvas.getContext("2d", { alpha: false });
+    )).getContext("2d", { alpha: false });
   }
 
   mouseCollision({ mx, my, bounds }) {
@@ -63,7 +62,7 @@ class Simulation extends SpatialHash {
         particle,
         particle.radius + this.maxRadius
       ))
-        particle.detectCollision(near);
+        particle.detectCollision(near); // ! findNear does not work properly
   }
 
   animate() {
@@ -73,6 +72,4 @@ class Simulation extends SpatialHash {
   }
 }
 
-const CELL_SIZE = 15,
-  MAX_RADIUS = 50;
-new Simulation(CELL_SIZE, MAX_RADIUS);
+new Simulation(settings.cell_size, settings.max_radius);
