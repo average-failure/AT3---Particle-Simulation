@@ -1,3 +1,9 @@
+/**
+ * Generates a random colour
+ * @param {Array} mix An array containing r, g, and b values to mix with the random colour
+ * @param {Number} mixEffect How much the provided mix affects the random colour
+ * @returns An random colour in RGB format
+ */
 const randColour = (mix, mixEffect = 2) => {
   const colour = [randInt(256), randInt(256), randInt(256)];
 
@@ -14,6 +20,12 @@ const randColour = (mix, mixEffect = 2) => {
   return colour;
 };
 
+/**
+ * Generates a random hex colour code
+ * @param {Array} mix An array containing r, g, and b values to mix with the random colour
+ * @param {Number} mixEffect How much the provided mix affects the random colour
+ * @returns An random colour in hexadecimal format
+ */
 export const randHex = (mix, mixEffect) => {
   const colour = randColour(mix, mixEffect);
 
@@ -22,12 +34,24 @@ export const randHex = (mix, mixEffect) => {
     .slice(1)}`;
 };
 
+/**
+ * Generates a random rgb colour
+ * @param {Array} mix An array containing r, g, and b values to mix with the random colour
+ * @param {Number} mixEffect How much the provided mix affects the random colour
+ * @returns An random colour in css rgb format
+ */
 export const randRGB = (mix, mixEffect) => {
   const colour = randColour(mix, mixEffect);
 
   return `rgb(${colour[0]},${colour[1]},${colour[2]})`;
 };
 
+/**
+ * Generates a random hsl colour
+ * @param {Array} mix An array containing r, g, and b values to mix with the random colour
+ * @param {Number} mixEffect How much the provided mix affects the random colour
+ * @returns An random colour in hsl format
+ */
 export const randHSL = (mix, mixEffect) => {
   const colour = randColour(mix, mixEffect);
 
@@ -75,14 +99,39 @@ export const randHSL = (mix, mixEffect) => {
   return `hsl(${h},${s}%,${l}%)`;
 };
 
+/**
+ * Generates a random integer
+ * @param {Number} max The maximum number to generate
+ * @param {Number} offset The amount to offset the random number by
+ * @returns A random integer
+ */
 export const randInt = (max, offset = 0) => ~~(Math.random() * max) + offset;
 
+/**
+ * Generates a random integer between two provided numbers
+ * @param {Number} max The maximum number
+ * @param {Number} min The minimum number
+ * @returns A random integer between max and min
+ */
 export const randRangeInt = (max, min = 0) =>
   ~~(Math.random() * (max - min)) + min;
 
+/**
+ * Generates a random number between two provided numbers
+ * @param {Number} max The maximum number
+ * @param {Number} min The minimum number
+ * @param {Number} round The number of decimals to round to
+ * @returns A random number rounded to round between max and min
+ */
 export const randRange = (max, min = 0, round) =>
   Number((Math.random() * (max - min) + min).toFixed(round));
 
+/**
+ * Returns a promise that resolves on an event
+ * @param {EventTarget} item The item to attach the event listener to
+ * @param {String} event A string containing the event to listen to
+ * @returns A promise that will resolve when the listener is triggered
+ */
 // Get a Promise from an event...
 // Claude @ https://stackoverflow.com/a/70789108
 export const getPromiseFromEvent = (item, event) =>
@@ -94,6 +143,11 @@ export const getPromiseFromEvent = (item, event) =>
     item.addEventListener(event, listener);
   });
 
+/**
+ * Waits for a given function to return true
+ * @param {Function} conditionFunction The function to wait for to be true
+ * @returns A promise that resolves when conditionFunction is true
+ */
 // Waits for conditionFunction to be true
 // Lightbeard @ https://stackoverflow.com/a/52652681
 export const waitFor = (conditionFunction) => {
@@ -105,6 +159,11 @@ export const waitFor = (conditionFunction) => {
   return new Promise(poll);
 };
 
+/**
+ * Fades a given element in or out
+ * @param {Element} element The element to fade in or out
+ * @param {String} type Either in or out
+ */
 export const fadeInOut = (element, type) => {
   const cStyle = getComputedStyle(element),
     style = element.style;
@@ -132,6 +191,12 @@ export const fadeInOut = (element, type) => {
   }
 };
 
+/**
+ * Creates an input element of type range as a child of the given parent
+ * @param {String} parentSelector A string containing a css selector for the parent element
+ * @param {Object} options An object containing options for the slider
+ * @param {String} id The id of the slider element
+ */
 export const createSlider = (parentSelector, options, id) => {
   const {
       min = 0,
@@ -167,6 +232,12 @@ export const createSlider = (parentSelector, options, id) => {
   slider.addEventListener("change", change);
 };
 
+/**
+ * Creates an input element of type checkbox as a child of the given parent
+ * @param {String} parentSelector A string containing a css selector for the parent element
+ * @param {Object} options An object containing options for the checkbox
+ * @param {String} id The id of the checkbox element
+ */
 export const createCheckbox = (parentSelector, options, id) => {
   const { value, name } = options,
     parentElement = document.querySelector(parentSelector);

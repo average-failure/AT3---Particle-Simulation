@@ -52,6 +52,7 @@ export class Particle {
   }
 
   detectCollision(otherParticle) {
+    // Find distance between particles
     const dx = this.x - otherParticle.x,
       dy = this.y - otherParticle.y;
     const dSq = dx ** 2 + dy ** 2;
@@ -59,9 +60,11 @@ export class Particle {
     if (dSq <= (this.radius + otherParticle.radius) ** 2) {
       const d = Math.sqrt(dSq);
 
+      // Normalised vectors
       const nvx = dx / d,
         nvy = dy / d;
 
+      // Relative vectors
       const rvx = otherParticle.vx - this.vx,
         rvy = otherParticle.vy - this.vy;
 
