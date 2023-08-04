@@ -68,6 +68,8 @@ export class Particle {
       const rvx = otherParticle.vx - this.vx,
         rvy = otherParticle.vy - this.vy;
 
+      // Calculate the dot product of normalised and relative vectors
+      // Essentially, relative magnitude in normalised direction
       const speed =
         (rvx * nvx + rvy * nvy) *
         (this.settings.toggles.coefficient_of_restitution
@@ -76,8 +78,10 @@ export class Particle {
 
       if (speed < 0) return;
 
+      // Calculate the impulse of the collision
       const impulse = (2 * speed) / (this.mass + otherParticle.mass);
 
+      // Calculate the velocity based on the impulse
       this.vx += impulse * otherParticle.mass * nvx;
       this.vy += impulse * otherParticle.mass * nvy;
       otherParticle.vx -= impulse * this.mass * nvx;
@@ -87,42 +91,25 @@ export class Particle {
 
   #checkBoundaries(width, height) {
     let diff;
+    const cor = this.settings.toggles.coefficient_of_restitution
+      ? this.settings.variables.coefficient_of_restitution
+      : 1;
     switch (true) {
       case (diff = this.x - this.radius) < 0:
         this.x = this.radius;
-        this.vx =
-          Math.abs(this.vx) *
-            (this.settings.toggles.coefficient_of_restitution
-              ? this.settings.variables.coefficient_of_restitution
-              : 1) +
-          diff;
+        this.vx = Math.abs(this.vx) * cor + diff;
         break;
       case (diff = this.x + this.radius) > width:
         this.x = width - this.radius;
-        this.vx =
-          -Math.abs(this.vx) *
-            (this.settings.toggles.coefficient_of_restitution
-              ? this.settings.variables.coefficient_of_restitution
-              : 1) -
-          (width - diff);
+        this.vx = -Math.abs(this.vx) * cor - (width - diff);
         break;
       case (diff = this.y - this.radius) < 0:
         this.y = this.radius;
-        this.vy =
-          Math.abs(this.vy) *
-            (this.settings.toggles.coefficient_of_restitution
-              ? this.settings.variables.coefficient_of_restitution
-              : 1) +
-          diff;
+        this.vy = Math.abs(this.vy) * cor + diff;
         break;
       case (diff = this.y + this.radius) > height:
         this.y = height - this.radius;
-        this.vy =
-          -Math.abs(this.vy) *
-            (this.settings.toggles.coefficient_of_restitution
-              ? this.settings.variables.coefficient_of_restitution
-              : 1) -
-          (height - diff);
+        this.vy = -Math.abs(this.vy) * cor - (height - diff);
         break;
     }
   }
