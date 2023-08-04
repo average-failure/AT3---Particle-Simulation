@@ -75,14 +75,13 @@ export const randHSL = (mix, mixEffect) => {
   return `hsl(${h},${s}%,${l}%)`;
 };
 
-export const randInt = (max, offset = 0) =>
-  Math.floor(Math.random() * max) + offset;
+export const randInt = (max, offset = 0) => ~~(Math.random() * max) + offset;
 
 export const randRangeInt = (max, min = 0) =>
-  Math.floor(Math.random() * (max - min)) + min;
+  ~~(Math.random() * (max - min)) + min;
 
 export const randRange = (max, min = 0, round) =>
-  (Math.random() * (max - min) + min).toFixed(round);
+  Number((Math.random() * (max - min) + min).toFixed(round));
 
 // Get a Promise from an event...
 // Claude @ https://stackoverflow.com/a/70789108
@@ -131,4 +130,57 @@ export const fadeInOut = (element, type) => {
     requestAnimationFrame(fadeOut);
     waitFor(() => fadeDone).then(() => (style.visibility = "hidden"));
   }
+};
+
+export const createSlider = (parentSelector, options, id) => {
+  const {
+      min = 0,
+      max = 1,
+      value = (min + max) / 2,
+      step = 0.1,
+      name,
+      onChange,
+    } = options,
+    parentElement = document.querySelector(parentSelector);
+
+  const container = document.createElement("div");
+  if (id)
+    container.innerHTML = `
+      <label for="${id}Slider" class="sliderLabel">${name}</label>
+      <input id="${id}Slider" class="slider" type="range" min="${min}" max="${max}" value="${value}" step="${step}" />
+    `;
+  else
+    container.innerHTML = `
+      <div class="sliderLabel">${name}</div>
+      <input class="slider" type="range" min="${min}" max="${max}" value="${value}" step="${step}" />
+    `;
+  parentElement.appendChild(container);
+
+  if (!onChange) return;
+
+  const slider = parentElement.querySelector(".slider"),
+    change = (event) => {
+      const value = event.target.value;
+      onChange(value * step);
+    };
+  slider.addEventListener("input", change);
+  slider.addEventListener("change", change);
+};
+
+export const createCheckbox = (parentSelector, options, id) => {
+  const { value, name } = options,
+    parentElement = document.querySelector(parentSelector);
+
+  const container = document.createElement("div");
+  if (id)
+    container.innerHTML = `
+      <label for="${id}Checkbox" class="checkboxLabel">${name}</label>
+      <input id="${id}Checkbox" class="checkbox" type="checkbox" ${value} />
+    `;
+  else
+    container.innerHTML = `
+      <div class="checkboxLabel">${name}</div>
+      <input class="checkbox" type="checkbox" ${value} />
+    `;
+  parentElement.appendChild(container);
 };

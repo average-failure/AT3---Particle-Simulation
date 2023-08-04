@@ -1,4 +1,4 @@
-class Application {
+class SimulationMain {
   constructor() {
     this.#initCanvas();
     this.#initWorker();
@@ -6,23 +6,33 @@ class Application {
     this.#onResize();
     addEventListener("resize", this.#onResize.bind(this));
 
-    /* this.canvas.addEventListener("mousemove", (event) =>
+    /* this.canvas.addEventListener("mousemove", (event) => {
+      const bounds = this.canvas.getBoundingClientRect();
       this.messageWorker({
         mouseCollision: {
-          mx: event.clientX,
-          my: event.clientY,
-          bounds: this.canvas.getBoundingClientRect(),
+          mx: event.clientX - bounds.left,
+          my: event.clientY - bounds.top,
         },
-      })
-    ); */
+      });
+    }); */
+
+    this.canvas.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+    });
 
     this.canvas.addEventListener("mousedown", (event) => {
+      event.preventDefault();
       const bounds = this.canvas.getBoundingClientRect();
       this.newParticle({
         x: event.clientX - bounds.left,
         y: event.clientY - bounds.top,
       });
     });
+
+    this.domElements = {
+      particleCount: document.getElementById("particleCount"),
+    };
+    this.particleCount = 0;
   }
 
   #initCanvas() {
@@ -32,8 +42,6 @@ class Application {
       : document.body.appendChild(
           (this.canvas = document.createElement("canvas"))
         );
-
-    this.#resizeCanvas();
   }
 
   #initWorker() {
@@ -46,13 +54,6 @@ class Application {
 
     const offscreen = this.canvas.transferControlToOffscreen();
     this.worker.postMessage({ addCanvas: offscreen }, [offscreen]);
-  }
-
-  #resizeCanvas() {
-    const pixelRatio = window.devicePixelRatio;
-    this.width = this.canvas.width = (this.canvas.clientWidth * pixelRatio) | 0;
-    this.height = this.canvas.height =
-      (this.canvas.clientHeight * pixelRatio) | 0;
   }
 
   #onResize() {
@@ -68,20 +69,60 @@ class Application {
 
   newParticle(particle) {
     this.messageWorker({ newParticle: particle });
+    this.domElements.particleCount.textContent = ++this.particleCount;
   }
 }
 
-const app = new Application();
-console.log(app);
+import { createCheckbox, createSlider } from "./utils.mjs";
 
-for (let i = 0; i < 100; ++i) app.newParticle(/* { mass: 50 } */);
+const variable_settings = {
+  input: [
+    { gravity: { max: 50, value: 9.8, step: 0.1, name: "Gravity" } },
+    { dt: { value: 0.1, step: 0.001, name: "Time" } },
+    { coefficient_of_restitution: { value: 0.9, step: 0.01, name: "COR" } },
+    { drag: { min: 0.99, value: 0.999, step: 0.001, name: "Drag" } },
+  ],
+};
 
-/* for (let x = 0; x < app.width; x += 36)
-  for (let y = 0; y < app.height; y += 36)
-    app.messageWorker({ newParticle: { x, y, mass: 3 } }); */
+const toggle_settings = {
+  change: [
+    { gravity: { value: "checked", name: "Gravity" } },
+    { coefficient_of_restitution: { value: "checked", name: "COR" } },
+    { drag: { name: "Drag" } },
+  ],
+};
 
-app.messageWorker({ animate: true });
+for (const [event, settings] of Object.entries(variable_settings))
+  for (const pair of settings)
+    for (const [setting, options] of Object.entries(pair)) {
+      createSlider("#settings", options, setting);
+      document
+        .querySelector(`#settings #${setting}Slider`)
+        .addEventListener(event, function () {
+          sim.messageWorker({ updateVariable: { setting, value: this.value } });
+        });
+    }
 
-addEventListener("error", (error) => {
+for (const [event, settings] of Object.entries(toggle_settings))
+  for (const pair of settings)
+    for (const [setting, options] of Object.entries(pair)) {
+      createCheckbox("#settings", options, setting);
+      document
+        .querySelector(`#settings #${setting}Checkbox`)
+        .addEventListener(event, function () {
+          sim.messageWorker({
+            updateToggle: { setting, value: this.checked },
+          });
+        });
+    }
+
+const sim = new SimulationMain();
+console.log(sim);
+
+for (let i = 0; i < 1; ++i) sim.newParticle(/* { mass: 50 } */);
+
+sim.messageWorker({ animate: true });
+
+/* addEventListener("error", (error) => {
   alert(error.message);
-});
+}); */

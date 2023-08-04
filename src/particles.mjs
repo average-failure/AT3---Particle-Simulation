@@ -1,5 +1,4 @@
-import { randHSL, randRange, randRangeInt, randRGB } from "./utils.mjs";
-import { settings } from "./settings.mjs";
+import { randRange, randRangeInt } from "./utils.mjs";
 
 const adjustColour = (colour, amount) => {
   const components = colour.substring(4, colour.length - 1).split(",");
@@ -18,36 +17,33 @@ const adjustColour = (colour, amount) => {
 };
 
 export class Particle {
-  constructor(
-    x,
-    y,
-    vx = randRange(50, -50),
-    vy = randRange(10),
-    mass = randRangeInt(50, 1)
-  ) {
+  /**
+   * A particle...
+   * @param {number} x The x coordinate of the particle
+   * @param {number} y The y coordinate of the particle
+   * @param {number} vx The x velocity of the particle
+   * @param {number} vy The y velocity of the particle
+   * @param {number} mass The mass of the particle (the radius is based off this)
+   * @param {settings} settings The simulation settings
+   */
+  constructor(x, y, vx, vy, mass, settings) {
     if (!(x && y)) throw "Error: Position not provided.";
+    if (!settings) throw "Error: Settings not provided.";
     this.x = x;
     this.y = y;
-    this.vx = vx;
-    this.vy = vy;
-    if (
-      (this.radius = (this.mass = mass) / settings.mass_radius_ratio) >
-      settings.max_radius
-    )
-      this.radius = settings.max_radius;
+    this.vx = vx || randRange(50, -50);
+    this.vy = vy || randRange(10);
+    this.settings = settings;
+    this.mass =
+      mass ||
+      randRangeInt(settings.constants.max_mass, settings.constants.min_mass);
+    if ((this.radius = settings.radius(mass)) > settings.constants.max_radius)
+      this.radius = settings.constants.max_radius;
+    else if (this.radius < settings.constants.min_radius)
+      this.radius = settings.constants.min_radius;
   }
 
   draw(ctx) {
-    /* const grd = ctx.createRadialGradient(
-      this.x,
-      this.y,
-      this.radius / 3,
-      this.x,
-      this.y,
-      this.radius
-    );
-    grd.addColorStop(0, adjustColour(this.colour, 100));
-    grd.addColorStop(1, this.colour); */
     ctx.fillStyle = this.colour;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -55,116 +51,92 @@ export class Particle {
     ctx.closePath();
   }
 
-  // detectCollision({ x, y, vx, vy, radius }) {
-  //   let dx, dy;
-  //   const distBetweenSq = (dx = x - this.x) * dx + (dy = y - this.y) * dy,
-  //     force = -this.radius / distBetweenSq;
-
-  //   if (Math.sqrt(distBetweenSq) < this.radius + radius) {
-  //     /* const angle = Math.atan2(dy, dx);
-  //     this.vx += force * Math.cos(angle);
-  //     this.vy += force * Math.sin(angle); */
-  //     const tempVx = this.vx,
-  //       tempVy = this.vy;
-  //     this.vx = vx || -this.vx;
-  //     this.vy = vy || -this.vy;
-  //     vx = tempVx;
-  //     vy = tempVy;
-  //   }
-  // }
-
   detectCollision(otherParticle) {
     const dx = this.x - otherParticle.x,
       dy = this.y - otherParticle.y;
-    const distBetweenSq = dx ** 2 + dy ** 2;
+    const dSq = dx ** 2 + dy ** 2;
 
-    if (distBetweenSq <= (this.radius + otherParticle.radius) ** 2) {
-      // * Simple bounce
-      /* this.vx *= -1;
-      this.vy *= -1;
+    if (dSq <= (this.radius + otherParticle.radius) ** 2) {
+      const d = Math.sqrt(dSq);
 
-      otherParticle.vx *= -1;
-      otherParticle.vy *= -1; */
-      // * ChatGPT
-      const angle = Math.atan2(dy, dx);
+      const nvx = dx / d,
+        nvy = dy / d;
 
-      const v1 = {
-        x: this.vx,
-        y: this.vy,
-      };
-      const v2 = {
-        x: otherParticle.vx,
-        y: otherParticle.vy,
-      };
+      const rvx = otherParticle.vx - this.vx,
+        rvy = otherParticle.vy - this.vy;
 
-      const rotatedVelocities = {
-        v1: {
-          x: v1.x * Math.cos(angle) + v1.y * Math.sin(angle),
-          y: v1.y * Math.cos(angle) - v1.x * Math.sin(angle),
-        },
-        v2: {
-          x: v2.x * Math.cos(angle) + v2.y * Math.sin(angle),
-          y: v2.y * Math.cos(angle) - v2.x * Math.sin(angle),
-        },
-      };
+      const speed =
+        (rvx * nvx + rvy * nvy) *
+        (this.settings.toggles.coefficient_of_restitution
+          ? this.settings.variables.coefficient_of_restitution
+          : 1);
 
-      // Calculate the final velocities after the collision
-      const v1Final = {
-        x:
-          ((this.radius - otherParticle.radius) * rotatedVelocities.v1.x +
-            2 * otherParticle.radius * rotatedVelocities.v2.x) /
-          (this.radius + otherParticle.radius),
-        y: rotatedVelocities.v1.y,
-      };
-      const v2Final = {
-        x:
-          ((otherParticle.radius - this.radius) * rotatedVelocities.v2.x +
-            2 * this.radius * rotatedVelocities.v1.x) /
-          (this.radius + otherParticle.radius),
-        y: rotatedVelocities.v2.y,
-      };
+      if (speed < 0) return;
 
-      // Rotate the velocities back
-      this.vx = v1Final.x * Math.cos(-angle) + v1Final.y * Math.sin(-angle);
-      this.vy = v1Final.y * Math.cos(-angle) - v1Final.x * Math.sin(-angle);
-      otherParticle.vx =
-        v2Final.x * Math.cos(-angle) + v2Final.y * Math.sin(-angle);
-      otherParticle.vy =
-        v2Final.y * Math.cos(-angle) - v2Final.x * Math.sin(-angle);
+      const impulse = (2 * speed) / (this.mass + otherParticle.mass);
+
+      this.vx += impulse * otherParticle.mass * nvx;
+      this.vy += impulse * otherParticle.mass * nvy;
+      otherParticle.vx -= impulse * this.mass * nvx;
+      otherParticle.vy -= impulse * this.mass * nvy;
     }
   }
 
   #checkBoundaries(width, height) {
+    let diff;
     switch (true) {
-      case this.x - this.radius <= 0:
+      case (diff = this.x - this.radius) < 0:
         this.x = this.radius;
-        this.vx = Math.abs(this.vx);
+        this.vx =
+          Math.abs(this.vx) *
+            (this.settings.toggles.coefficient_of_restitution
+              ? this.settings.variables.coefficient_of_restitution
+              : 1) +
+          diff;
         break;
-      case this.x + this.radius >= width:
+      case (diff = this.x + this.radius) > width:
         this.x = width - this.radius;
-        this.vx = -Math.abs(this.vx);
+        this.vx =
+          -Math.abs(this.vx) *
+            (this.settings.toggles.coefficient_of_restitution
+              ? this.settings.variables.coefficient_of_restitution
+              : 1) -
+          (width - diff);
         break;
-      case this.y - this.radius <= 0:
+      case (diff = this.y - this.radius) < 0:
         this.y = this.radius;
-        this.vy = Math.abs(this.vy);
+        this.vy =
+          Math.abs(this.vy) *
+            (this.settings.toggles.coefficient_of_restitution
+              ? this.settings.variables.coefficient_of_restitution
+              : 1) +
+          diff;
         break;
-      case this.y + this.radius >= height:
+      case (diff = this.y + this.radius) > height:
         this.y = height - this.radius;
-        this.vy = -Math.abs(this.vy);
+        this.vy =
+          -Math.abs(this.vy) *
+            (this.settings.toggles.coefficient_of_restitution
+              ? this.settings.variables.coefficient_of_restitution
+              : 1) -
+          (height - diff);
         break;
     }
   }
 
   #updatePosition() {
-    this.x += this.vx * settings.dt;
-    this.y += this.vy * settings.dt;
+    this.x += this.vx * this.settings.variables.dt;
+    this.y += this.vy * this.settings.variables.dt;
   }
 
   #updateVelocity() {
-    this.vy += settings.gravity * settings.dt;
+    if (this.settings.toggles.gravity)
+      this.vy += this.settings.variables.gravity * this.settings.variables.dt;
 
-    this.vx *= settings.drag;
-    this.vy *= settings.drag;
+    if (this.settings.toggles.drag) {
+      this.vx *= this.settings.variables.drag;
+      this.vy *= this.settings.variables.drag;
+    }
 
     this.colour = `hsl(${(this.colourComp =
       Math.abs(this.vx / 2) + Math.abs(this.vy / 2))},100%,${
