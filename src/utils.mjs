@@ -196,6 +196,7 @@ export const fadeInOut = (element, type) => {
  * @param {String} parentSelector A string containing a css selector for the parent element
  * @param {Object} options An object containing options for the slider
  * @param {String} id The id of the slider element
+ * @returns The slider element
  */
 export const createSlider = (parentSelector, options, id) => {
   const {
@@ -209,27 +210,31 @@ export const createSlider = (parentSelector, options, id) => {
     parentElement = document.querySelector(parentSelector);
 
   const container = document.createElement("div");
+  container.classList.add("sliderContainer");
   if (id)
     container.innerHTML = `
       <label for="${id}Slider" class="sliderLabel">${name}</label>
       <input id="${id}Slider" class="slider" type="range" min="${min}" max="${max}" value="${value}" step="${step}" />
+      <div class="sliderValue">${value}</div>
     `;
   else
     container.innerHTML = `
       <div class="sliderLabel">${name}</div>
       <input class="slider" type="range" min="${min}" max="${max}" value="${value}" step="${step}" />
+      <div class="sliderValue">${value}</div>
     `;
   parentElement.appendChild(container);
 
-  if (!onChange) return;
-
-  const slider = parentElement.querySelector(".slider"),
-    change = (event) => {
-      const value = event.target.value;
-      onChange(value * step);
+  const slider = container.querySelector(".slider"),
+    sliderValue = container.querySelector(".sliderValue"),
+    change = function () {
+      sliderValue.textContent = this.value;
+      onChange?.(this.value);
     };
   slider.addEventListener("input", change);
   slider.addEventListener("change", change);
+
+  return container.querySelector(id ? `#${id}Slider` : ".slider");
 };
 
 /**
@@ -237,12 +242,14 @@ export const createSlider = (parentSelector, options, id) => {
  * @param {String} parentSelector A string containing a css selector for the parent element
  * @param {Object} options An object containing options for the checkbox
  * @param {String} id The id of the checkbox element
+ * @returns The checkbox element
  */
 export const createCheckbox = (parentSelector, options, id) => {
   const { value, name } = options,
     parentElement = document.querySelector(parentSelector);
 
   const container = document.createElement("div");
+  container.classList.add("checkboxContainer");
   if (id)
     container.innerHTML = `
       <label for="${id}Checkbox" class="checkboxLabel">${name}</label>
@@ -254,4 +261,6 @@ export const createCheckbox = (parentSelector, options, id) => {
       <input class="checkbox" type="checkbox" ${value} />
     `;
   parentElement.appendChild(container);
+
+  return container.querySelector(id ? `#${id}Checkbox` : ".checkbox");
 };

@@ -79,7 +79,7 @@ const variable_settings = {
   input: [
     { gravity: { max: 50, value: 9.8, step: 0.1, name: "Gravity" } },
     { dt: { value: 0.1, step: 0.001, name: "Time" } },
-    { coefficient_of_restitution: { value: 0.9, step: 0.01, name: "COR" } },
+    { coefficient_of_restitution: { value: 0.95, step: 0.01, name: "COR" } },
     { drag: { min: 0.99, value: 0.999, step: 0.001, name: "Drag" } },
   ],
 };
@@ -89,31 +89,32 @@ const toggle_settings = {
     { gravity: { value: "checked", name: "Gravity" } },
     { coefficient_of_restitution: { value: "checked", name: "COR" } },
     { drag: { name: "Drag" } },
+    { show_velocity: { name: "Velocity" } },
   ],
 };
 
 for (const [event, settings] of Object.entries(variable_settings))
   for (const pair of settings)
     for (const [setting, options] of Object.entries(pair)) {
-      createSlider("#settings", options, setting);
-      document
-        .querySelector(`#settings #${setting}Slider`)
-        .addEventListener(event, function () {
-          sim.messageWorker({ updateVariable: { setting, value: this.value } });
-        });
+      const slider = createSlider("#settings", options, setting);
+      slider.addEventListener(event, function () {
+        sim.messageWorker({ updateVariable: { setting, value: this.value } });
+      });
     }
 
 for (const [event, settings] of Object.entries(toggle_settings))
   for (const pair of settings)
     for (const [setting, options] of Object.entries(pair)) {
-      createCheckbox("#settings", options, setting);
-      document
-        .querySelector(`#settings #${setting}Checkbox`)
-        .addEventListener(event, function () {
-          sim.messageWorker({
-            updateToggle: { setting, value: this.checked },
-          });
+      const checkbox = createCheckbox("#settings", options, setting),
+        sliderList = document.querySelector(`#settings #${setting}Slider`)
+          ?.parentElement.classList;
+      if (!options.value) sliderList?.add("hidden");
+      checkbox.addEventListener(event, function () {
+        sim.messageWorker({
+          updateToggle: { setting, value: this.checked },
         });
+        sliderList?.[this.checked === true ? "remove" : "add"]("hidden");
+      });
     }
 
 const sim = new SimulationMain();

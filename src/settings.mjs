@@ -27,12 +27,13 @@ export const settings = {
     mouse_collision_radius: 40,
     gravity: 9.81,
     dt: 0.1,
-    coefficient_of_restitution: 0.9,
+    coefficient_of_restitution: 0.95,
     drag: 0.999,
   },
   toggles: {
     gravity: true,
     coefficient_of_restitution: true,
     drag: false,
+    show_velocity: false,
   },
 };

@@ -49,6 +49,15 @@ export class Particle {
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.closePath();
+
+    if (!this.settings.toggles.show_velocity) return;
+
+    ctx.strokeStyle = this.colour;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.vx, this.y + this.vy);
+    ctx.stroke();
+    ctx.closePath();
   }
 
   detectCollision(otherParticle) {
