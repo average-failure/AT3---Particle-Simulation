@@ -24,7 +24,12 @@ export const settings = {
     mass_radius_ratio: 10,
   },
   variables: {
-    mouse_collision_radius: 40,
+    /* mouse_collision_radius: 100,
+    get mouse_collision_mass() {
+      return this.mouse_collision_radius * this.mouse_mass_radius_ratio;
+    },
+    mouse_mass_radius_ratio: 10,
+    mouse_collision_velocity: 0.01, */
     gravity: 9.81,
     dt: 0.1,
     coefficient_of_restitution: 0.95,

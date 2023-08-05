@@ -128,8 +128,7 @@ export class SpatialHash {
         const key = `${currX},${currY}`;
         if (this.grid[key])
           for (const p of this.grid[key]) {
-            let dx, dy;
-            const distBetweenSq = (dx = p.x - x) * dx + (dy = p.y - y) * dy;
+            const distBetweenSq = (p.x - x) ** 2 + (p.y - y) ** 2;
             if (distBetweenSq <= radius ** 2 && p !== particle) near.add(p);
           }
       }

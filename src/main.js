@@ -6,15 +6,16 @@ class SimulationMain {
     this.#onResize();
     addEventListener("resize", this.#onResize.bind(this));
 
-    /* this.canvas.addEventListener("mousemove", (event) => {
-      const bounds = this.canvas.getBoundingClientRect();
-      this.messageWorker({
-        mouseCollision: {
-          mx: event.clientX - bounds.left,
-          my: event.clientY - bounds.top,
-        },
-      });
-    }); */
+    // this.canvas.addEventListener("mousemove", (event) => {
+    //   const bounds = this.canvas.getBoundingClientRect();
+    //   this.messageWorker({
+    //     mouseCollision: {
+    //       mx: event.clientX - bounds.left,
+    //       my: event.clientY - bounds.top,
+    //     },
+    //   });
+    // });
+    // TODO
 
     this.canvas.addEventListener("contextmenu", (event) => {
       event.preventDefault();

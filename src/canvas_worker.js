@@ -71,22 +71,24 @@ class SimulationWorker extends SpatialHash {
     this.settings.toggles[setting] = value;
   }
 
-  /**
-   * Handles the collision of particles with the mouse
-   * @param {Object} param0 An object containing mouse x and y coordinates
-   */
-  mouseCollision({ mx, my }) {
-    for (const near of this.findNear(
-      { mx, my },
-      this.settings.variables.mouse_collision_radius +
-        this.settings.constants.max_radius
-    ))
-      near.detectCollision({
-        mx,
-        my,
-        radius: this.settings.variables.mouse_collision_radius,
-      });
-  }
+  // /**
+  //  * Handles the collision of particles with the mouse
+  //  * @param {Object} param0 An object containing mouse x and y coordinates
+  //  */
+  // mouseCollision({ mx: x, my: y }) {
+  //   for (const near of this.findNear(
+  //     { x, y },
+  //     this.settings.variables.mouse_collision_radius +
+  //       this.settings.constants.max_radius
+  //   ))
+  //     near.mouseCollision({
+  //       x,
+  //       y,
+  //       radius: this.settings.variables.mouse_collision_radius,
+  //       mass: this.settings.variables.mouse_collision_mass,
+  //     });
+  // }
+  // TODO: handle mouse collision by dragging around a solid object (maybe)
 
   /**
    * Handles the calculations of a given particle
