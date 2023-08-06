@@ -1,21 +1,5 @@
 import { randRange, randRangeInt } from "./utils.mjs";
 
-const adjustColour = (colour, amount) => {
-  const components = colour.substring(4, colour.length - 1).split(",");
-  return `rgb(${components[0] + amount},${components[1] + amount},${
-    components[2] + amount
-  })`;
-  /* "#" +
-    colour
-      .replace(/^#/, "")
-      .replace(/../g, (colour) =>
-        (
-          "0" +
-          Math.min(255, Math.max(0, parseInt(colour, 16) + amount)).toString(16)
-        ).slice(-2)
-      ); */
-};
-
 export class Particle {
   /**
    * A particle...
@@ -41,6 +25,14 @@ export class Particle {
       this.radius = settings.constants.max_radius;
     else if (this.radius < settings.constants.min_radius)
       this.radius = settings.constants.min_radius;
+  }
+
+  static getClassName() {
+    return "Particle";
+  }
+
+  getClassName() {
+    return Particle.getClassName();
   }
 
   draw(ctx) {
@@ -123,7 +115,7 @@ export class Particle {
     }
   }
 
-  #updatePosition() {
+  updatePosition() {
     this.x += this.vx * this.settings.variables.dt;
     this.y += this.vy * this.settings.variables.dt;
   }
@@ -137,16 +129,197 @@ export class Particle {
       this.vy *= this.settings.variables.drag;
     }
 
+    this.updateColour();
+  }
+
+  updateColour() {
     this.colour = `hsl(${(this.colourComp =
       Math.abs(this.vx / 2) + Math.abs(this.vy / 2))},100%,${
       this.colourComp / 2 + 30
     }%)`;
   }
 
-  update(width, height) {
+  updateCalculations(width, height) {
     this.#checkBoundaries(width, height);
-
     this.#updateVelocity();
-    this.#updatePosition();
+  }
+
+  update(width, height) {
+    this.updateCalculations(width, height);
+    this.updatePosition();
+  }
+}
+
+export class AttractorParticle extends Particle {
+  constructor(x, y, vx, vy, mass, settings, strength) {
+    super(x, y, vx, vy, mass, settings);
+
+    this.strength = strength || 100;
+    this.colour = "#1010ff";
+  }
+
+  static getClassName() {
+    return "AttractorParticle";
+  }
+
+  getClassName() {
+    return AttractorParticle.getClassName();
+  }
+
+  #attract(p) {
+    const dx = this.x - p.x,
+      dy = this.y - p.y;
+    const dSq = dx ** 2 + dy ** 2;
+
+    const f =
+      (this.strength * this.settings.variables.attraction_strength) /
+      (dSq *
+        Math.sqrt(
+          dSq +
+            (this.settings.toggles.softening_constant
+              ? this.settings.variables.softening_constant
+              : 0)
+        ));
+
+    p.vx += f * dx * this.settings.variables.dt;
+    p.vy += f * dy * this.settings.variables.dt;
+  }
+
+  updateColour() {}
+
+  updateCalculations(width, height, near) {
+    super.updateCalculations(width, height);
+
+    for (const p of near) this.#attract(p);
+  }
+
+  update(width, height, [near]) {
+    this.updateCalculations(width, height, near);
+
+    this.updatePosition();
+  }
+}
+
+export class RepulserParticle extends Particle {
+  constructor(x, y, vx, vy, mass, settings, strength) {
+    super(x, y, vx, vy, mass, settings);
+
+    this.strength = strength || 250;
+    this.colour = "#10ff10";
+  }
+
+  static getClassName() {
+    return "RepulserParticle";
+  }
+
+  getClassName() {
+    return RepulserParticle.getClassName();
+  }
+
+  #repulse(p) {
+    const dx = this.x - p.x,
+      dy = this.y - p.y;
+    const dSq = dx ** 2 + dy ** 2;
+
+    const f =
+      (this.strength * this.settings.variables.repulsion_strength) /
+      (dSq *
+        Math.sqrt(
+          dSq +
+            (this.settings.toggles.softening_constant
+              ? this.settings.variables.softening_constant
+              : 0)
+        ));
+
+    p.vx -= f * dx * this.settings.variables.dt;
+    p.vy -= f * dy * this.settings.variables.dt;
+  }
+
+  updateColour() {}
+
+  updateCalculations(width, height, near) {
+    super.updateCalculations(width, height);
+
+    for (const p of near) this.#repulse(p);
+  }
+
+  update(width, height, [near]) {
+    this.updateCalculations(width, height, near);
+
+    this.updatePosition();
+  }
+}
+
+export class ChargedParticle extends Particle {
+  constructor(x, y, vx, vy, mass, settings, strength, charge) {
+    super(x, y, vx, vy, mass, settings);
+
+    this.strength = strength || 100;
+    this.charge = charge || [-1, 1][~~(Math.random() * 2)];
+    this.colour = this.charge > 0 ? "#ff1010" : "#1010ff";
+  }
+
+  static getClassName() {
+    return "ChargedParticle";
+  }
+
+  getClassName() {
+    return ChargedParticle.getClassName();
+  }
+
+  #attract(p) {
+    const dx = this.x - p.x,
+      dy = this.y - p.y;
+    const dSq = dx ** 2 + dy ** 2;
+
+    const f =
+      (this.strength * this.settings.variables.attraction_strength) /
+      (dSq *
+        Math.sqrt(
+          dSq +
+            (this.settings.toggles.softening_constant
+              ? this.settings.variables.softening_constant
+              : 0)
+        ));
+
+    p.vx += f * dx * this.settings.variables.dt;
+    p.vy += f * dy * this.settings.variables.dt;
+  }
+
+  #repulse(p) {
+    const dx = this.x - p.x,
+      dy = this.y - p.y;
+    const dSq = dx ** 2 + dy ** 2;
+
+    const f =
+      (this.strength * this.settings.variables.repulsion_strength) /
+      (dSq *
+        Math.sqrt(
+          dSq +
+            (this.settings.toggles.softening_constant
+              ? this.settings.variables.softening_constant
+              : 0)
+        ));
+
+    p.vx -= f * dx * this.settings.variables.dt;
+    p.vy -= f * dy * this.settings.variables.dt;
+  }
+
+  updateColour() {}
+
+  updateCalculations(width, height, near) {
+    super.updateCalculations(width, height);
+
+    for (const p of near) {
+      if (p instanceof ChargedParticle && (this.charge ^ p.charge) >= 0)
+        this.#repulse(p);
+      else this.#attract(p);
+    }
+  }
+
+  update(width, height, [near]) {
+    this.updateCalculations(width, height, near);
+
+    this.updatePosition();
   }
 }

@@ -78,10 +78,26 @@ import { createCheckbox, createSlider } from "./utils.mjs";
 
 const variable_settings = {
   input: [
-    { gravity: { max: 50, value: 9.8, step: 0.1, name: "Gravity" } },
-    { dt: { value: 0.1, step: 0.001, name: "Time" } },
-    { coefficient_of_restitution: { value: 0.95, step: 0.01, name: "COR" } },
+    { gravity: { min: -50, max: 50, value: 9.8, step: 0.1, name: "Gravity" } },
+    { dt: { value: 0.1, step: 0.01, name: "Time" } },
+    {
+      coefficient_of_restitution: {
+        min: 0.25,
+        value: 0.95,
+        step: 0.01,
+        name: "COR",
+      },
+    },
     { drag: { min: 0.99, value: 0.999, step: 0.001, name: "Drag" } },
+    {
+      softening_constant: {
+        value: 0.15,
+        step: 0.01,
+        name: "Softening Constant",
+      },
+    },
+    { attraction_radius: { value: 0.1, name: "Attraction Radius" } },
+    { attraction_strength: { max: 100, name: "Attraction Strength" } },
   ],
 };
 
@@ -91,6 +107,7 @@ const toggle_settings = {
     { coefficient_of_restitution: { value: "checked", name: "COR" } },
     { drag: { name: "Drag" } },
     { show_velocity: { name: "Velocity" } },
+    { softening_constant: { value: "checked", name: "Softening Constant" } },
   ],
 };
 
@@ -121,7 +138,7 @@ for (const [event, settings] of Object.entries(toggle_settings))
 const sim = new SimulationMain();
 console.log(sim);
 
-for (let i = 0; i < 1; ++i) sim.newParticle(/* { mass: 50 } */);
+for (let i = 0; i < 100; ++i) sim.newParticle({ type: "ChargedParticle" });
 
 sim.messageWorker({ animate: true });
 

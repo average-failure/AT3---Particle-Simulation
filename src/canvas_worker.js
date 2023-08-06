@@ -19,6 +19,34 @@ class SimulationWorker extends SpatialHash {
       "updateToggle",
     ];
 
+    this.availableParticles = {
+      Particle: null,
+      AttractorParticle: (particle) => [
+        this.findNear(
+          particle,
+          this.settings.constants.max_radius +
+            particle.strength * this.settings.variables.attraction_radius
+        ),
+      ],
+      RepulserParticle: (particle) => [
+        this.findNear(
+          particle,
+          this.settings.constants.max_radius +
+            particle.strength * this.settings.variables.repulsion_radius
+        ),
+      ],
+      ChargedParticle: (particle) => [
+        this.findNear(
+          particle,
+          this.settings.constants.max_radius +
+            particle.strength *
+              ((this.settings.variables.attraction_radius +
+                this.settings.variables.repulsion_radius) /
+                2)
+        ),
+      ],
+    };
+
     onmessage = this.#onMessage.bind(this);
   }
 
@@ -96,11 +124,15 @@ class SimulationWorker extends SpatialHash {
    */
   #calculations(particle) {
     // console.time("remove");
-    this.removeParticle(particle); // ! too laggy or something; causes visual glitches
+    this.removeParticle(particle);
     // console.timeEnd("remove");
 
     // console.time("update");
-    particle.update(this.width, this.height);
+    particle.update(
+      this.width,
+      this.height,
+      this.availableParticles[particle.getClassName()]?.(particle)
+    );
     // console.timeEnd("update");
 
     // console.time("collision");
@@ -112,7 +144,7 @@ class SimulationWorker extends SpatialHash {
     // console.timeEnd("collision");
 
     // console.time("new");
-    this.addParticle(particle); // ! too laggy or something; causes visual glitches
+    this.addParticle(particle);
     // console.timeEnd("new");
   }
 

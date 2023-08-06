@@ -31,12 +31,18 @@ export const settings = {
     mouse_mass_radius_ratio: 10,
     mouse_collision_velocity: 0.01, */
     gravity: 9.81,
+    softening_constant: 0.15,
+    attraction_radius: 0.1,
+    attraction_strength: 50,
+    repulsion_radius: 0.1,
+    repulsion_strength: 50,
     dt: 0.1,
     coefficient_of_restitution: 0.95,
     drag: 0.999,
   },
   toggles: {
     gravity: true,
+    softening_constant: true,
     coefficient_of_restitution: true,
     drag: false,
     show_velocity: false,
