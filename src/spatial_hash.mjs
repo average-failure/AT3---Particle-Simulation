@@ -1,5 +1,4 @@
-import * as PARTICLES from "./particles.mjs";
-import { randRangeInt } from "./utils.mjs";
+import { Particle } from "./particles.mjs";
 
 export class SpatialHash {
   /**
@@ -11,6 +10,8 @@ export class SpatialHash {
     this.grid = {};
     this.particles = [];
     this.preCleanTime = performance.now();
+
+    this.ids = -1;
   }
 
   /**
@@ -25,49 +26,10 @@ export class SpatialHash {
     )}`;
   }
 
-  /**
-   * A helper method to create instances of a selected particle type
-   * @param {String} type The type of particle to create
-   * @param  {...any} args The parameters of the particle
-   * @returns A new instance of the selected particle type
-   */
-  #createInstance(type, ...args) {
-    const SelectedClass = PARTICLES[type] || PARTICLES.Particle;
-    // Object.values(PARTICLES)[~~(Math.random() * 3)];
-
-    return new SelectedClass(...args);
-  }
-
-  /**
-   * Adds a new Particle to the spatial hash grid and particles array
-   * @param {Particle} particle An instance of a Particle or an object containing parameters for the Particle to add to the hash
-   */
-  newParticle(particle = {}) {
-    const {
-        mass = randRangeInt(
-          this.settings.constants.max_mass,
-          this.settings.constants.min_mass
-        ),
-        x = randRangeInt(
-          this.width - this.settings.radius(mass),
-          this.settings.radius(mass)
-        ),
-        y = randRangeInt(
-          this.height - this.settings.radius(mass),
-          this.settings.radius(mass)
-        ),
-        vx,
-        vy,
-        type,
-      } = particle,
-      key = this.#hashKey(x, y);
+  newClient(client) {
+    const key = this.#hashKey(client.x, client.y);
     if (!this.grid[key]) this.grid[key] = new Set();
-    const p =
-      particle instanceof PARTICLES.Particle
-        ? particle
-        : this.#createInstance(type, x, y, vx, vy, mass, this.settings);
-    this.grid[key].add(p);
-    this.particles.push(p);
+    this.grid[key].add(client);
   }
 
   /**
@@ -75,7 +37,7 @@ export class SpatialHash {
    * @param {Particle} particle The instance of Particle to update
    */
   addParticle(particle) {
-    if (!(particle instanceof PARTICLES.Particle)) return;
+    if (!(particle instanceof Particle)) return;
     const key = this.#hashKey(particle.x, particle.y);
     if (!this.grid[key]) this.grid[key] = new Set();
     this.grid[key].add(particle);
@@ -86,7 +48,7 @@ export class SpatialHash {
    * @param {Particle} particle The instance of Particle to remove
    */
   deleteParticle(particle) {
-    if (!(particle instanceof PARTICLES.Particle)) return;
+    if (!(particle instanceof Particle)) return;
     const key = this.#hashKey(particle.x, particle.y);
     this.grid[key]?.delete(particle);
     const index = this.particles.indexOf(particle);
@@ -99,7 +61,7 @@ export class SpatialHash {
    * @param {Particle} particle The instance of Particle to remove
    */
   removeParticle(particle) {
-    if (!(particle instanceof PARTICLES.Particle)) return;
+    if (!(particle instanceof Particle)) return;
     this.grid[this.#hashKey(particle.x, particle.y)]?.delete(particle);
     this.#cleanup();
   }

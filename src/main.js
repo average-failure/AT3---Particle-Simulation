@@ -68,8 +68,8 @@ class SimulationMain {
     this.worker.postMessage(message);
   }
 
-  newParticle(particle) {
-    this.messageWorker({ newParticle: particle });
+  newParticle(particle, type) {
+    this.messageWorker({ newParticle: { particle, type } });
     this.domElements.particleCount.textContent = ++this.particleCount;
   }
 }
@@ -97,7 +97,7 @@ const variable_settings = {
       },
     },
     { attraction_radius: { value: 0.1, name: "Attraction Radius" } },
-    { attraction_strength: { max: 100, name: "Attraction Strength" } },
+    { attraction_strength: { max: 100, step: 1, name: "Attraction Strength" } },
   ],
 };
 
@@ -138,7 +138,7 @@ for (const [event, settings] of Object.entries(toggle_settings))
 const sim = new SimulationMain();
 console.log(sim);
 
-for (let i = 0; i < 100; ++i) sim.newParticle({ type: "ChargedParticle" });
+for (let i = 0; i < 100; ++i) sim.newParticle({}, "ChargedParticle");
 
 sim.messageWorker({ animate: true });
 

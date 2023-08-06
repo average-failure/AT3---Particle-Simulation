@@ -22,6 +22,8 @@ export const settings = {
       return this.min_mass;
     },
     mass_radius_ratio: 10,
+
+    max_particles: 1000,
   },
   variables: {
     /* mouse_collision_radius: 100,
@@ -34,8 +36,8 @@ export const settings = {
     softening_constant: 0.15,
     attraction_radius: 0.1,
     attraction_strength: 50,
-    repulsion_radius: 0.1,
-    repulsion_strength: 50,
+    repulsion_radius: 0.5,
+    repulsion_strength: 100,
     dt: 0.1,
     coefficient_of_restitution: 0.95,
     drag: 0.999,

@@ -3,14 +3,12 @@ import { randRange, randRangeInt } from "./utils.mjs";
 export class Particle {
   /**
    * A particle...
-   * @param {number} x The x coordinate of the particle
-   * @param {number} y The y coordinate of the particle
-   * @param {number} vx The x velocity of the particle
-   * @param {number} vy The y velocity of the particle
-   * @param {number} mass The mass of the particle (the radius is based off this)
+   * @param {Number} id The id of the particle
    * @param {settings} settings The simulation settings
+   * @param {Object} param2 The parameters of the particle
    */
-  constructor(x, y, vx, vy, mass, settings) {
+  constructor(id, settings, { x, y, vx, vy, mass }) {
+    if (!Number.isInteger(id)) throw "Error: Id not provided.";
     if (!(x && y)) throw "Error: Position not provided.";
     if (!settings) throw "Error: Settings not provided.";
     this.x = x;
@@ -20,11 +18,19 @@ export class Particle {
     this.settings = settings;
     this.mass =
       mass ||
-      randRangeInt(settings.constants.max_mass, settings.constants.min_mass);
-    if ((this.radius = settings.radius(mass)) > settings.constants.max_radius)
-      this.radius = settings.constants.max_radius;
-    else if (this.radius < settings.constants.min_radius)
-      this.radius = settings.constants.min_radius;
+      randRangeInt(
+        this.settings.constants.max_mass,
+        this.settings.constants.min_mass
+      );
+    if (
+      (this.radius = this.settings.radius(mass)) >
+      this.settings.constants.max_radius
+    )
+      this.radius = this.settings.constants.max_radius;
+    else if (this.radius < this.settings.constants.min_radius)
+      this.radius = this.settings.constants.min_radius;
+
+    this.id = id;
   }
 
   static getClassName() {
@@ -33,23 +39,6 @@ export class Particle {
 
   getClassName() {
     return Particle.getClassName();
-  }
-
-  draw(ctx) {
-    ctx.fillStyle = this.colour;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.closePath();
-
-    if (!this.settings.toggles.show_velocity) return;
-
-    ctx.strokeStyle = this.colour;
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y);
-    ctx.lineTo(this.x + this.vx, this.y + this.vy);
-    ctx.stroke();
-    ctx.closePath();
   }
 
   detectCollision(otherParticle) {
@@ -151,10 +140,10 @@ export class Particle {
 }
 
 export class AttractorParticle extends Particle {
-  constructor(x, y, vx, vy, mass, settings, strength) {
-    super(x, y, vx, vy, mass, settings);
+  constructor(id, settings, params) {
+    super(id, settings, params);
 
-    this.strength = strength || 100;
+    this.strength = params.strength || 100;
     this.colour = "#1010ff";
   }
 
@@ -201,10 +190,10 @@ export class AttractorParticle extends Particle {
 }
 
 export class RepulserParticle extends Particle {
-  constructor(x, y, vx, vy, mass, settings, strength) {
-    super(x, y, vx, vy, mass, settings);
+  constructor(id, settings, params) {
+    super(id, settings, params);
 
-    this.strength = strength || 250;
+    this.strength = params.strength || 100;
     this.colour = "#10ff10";
   }
 
@@ -222,7 +211,7 @@ export class RepulserParticle extends Particle {
     const dSq = dx ** 2 + dy ** 2;
 
     const f =
-      (this.strength * this.settings.variables.repulsion_strength) /
+      (this.strength * 2.5 * this.settings.variables.repulsion_strength) /
       (dSq *
         Math.sqrt(
           dSq +
@@ -251,11 +240,11 @@ export class RepulserParticle extends Particle {
 }
 
 export class ChargedParticle extends Particle {
-  constructor(x, y, vx, vy, mass, settings, strength, charge) {
-    super(x, y, vx, vy, mass, settings);
+  constructor(id, settings, params) {
+    super(id, settings, params);
 
-    this.strength = strength || 100;
-    this.charge = charge || [-1, 1][~~(Math.random() * 2)];
+    this.strength = params.strength || 100;
+    this.charge = params.charge || [-1, 1][~~(Math.random() * 2)];
     this.colour = this.charge > 0 ? "#ff1010" : "#1010ff";
   }
 
@@ -292,7 +281,7 @@ export class ChargedParticle extends Particle {
     const dSq = dx ** 2 + dy ** 2;
 
     const f =
-      (this.strength * this.settings.variables.repulsion_strength) /
+      (this.strength * 2.5 * this.settings.variables.repulsion_strength) /
       (dSq *
         Math.sqrt(
           dSq +
@@ -311,9 +300,9 @@ export class ChargedParticle extends Particle {
     super.updateCalculations(width, height);
 
     for (const p of near) {
-      if (p instanceof ChargedParticle && (this.charge ^ p.charge) >= 0)
-        this.#repulse(p);
-      else this.#attract(p);
+      if (p instanceof ChargedParticle)
+        if ((this.charge ^ p.charge) >= 0) this.#repulse(p);
+        else this.#attract(p);
     }
   }
 
