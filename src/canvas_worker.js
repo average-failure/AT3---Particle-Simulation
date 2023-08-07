@@ -134,27 +134,32 @@ class SimulationWorker extends SpatialHash {
     if (!(this.particles.length < this.settings.constants.max_particles))
       return alert("Max particles reached!"); // TODO: Alert doesn't work (it is a method of the global window object); send message to main thread instead
 
-    const defaults = {
+    const d1 = {
       mass: randRangeInt(
         this.settings.constants.max_mass,
         this.settings.constants.min_mass
       ),
+    };
+
+    Object.assign(d1, particle);
+
+    const d2 = {
       x: randRangeInt(
-        this.width - this.settings.radius(this.mass),
-        this.settings.radius(this.mass)
+        this.width - this.settings.radius(d1.mass),
+        this.settings.radius(d1.mass)
       ),
       y: randRangeInt(
-        this.height - this.settings.radius(this.mass),
-        this.settings.radius(this.mass)
+        this.height - this.settings.radius(d1.mass),
+        this.settings.radius(d1.mass)
       ),
     };
 
-    Object.assign(defaults, particle);
+    Object.assign(d2, d1);
 
     const p =
       particle instanceof PARTICLES.Particle
         ? particle
-        : this.#createParticleInstance(type, this.settings, defaults);
+        : this.#createParticleInstance(type, this.settings, d2);
 
     this.newClient(p);
     this.particles.push(p);
@@ -202,27 +207,30 @@ class SimulationWorker extends SpatialHash {
     )
       return alert("Max particles reached!"); // TODO: Alert doesn't work (it is a method of the global window object); send message to main thread instead
 
-    const defaults = {
-      mass: randRangeInt(
-        this.settings.constants.max_mass,
-        this.settings.constants.min_mass
+    const d1 = {
+      w: randRangeInt(
+        this.settings.constants.max_width,
+        -this.settings.constants.max_width
       ),
-      x: randRangeInt(
-        this.width - this.settings.radius(this.mass),
-        this.settings.radius(this.mass)
-      ),
-      y: randRangeInt(
-        this.height - this.settings.radius(this.mass),
-        this.settings.radius(this.mass)
+      h: randRangeInt(
+        this.settings.constants.max_height,
+        -this.settings.constants.max_height
       ),
     };
 
-    Object.assign(defaults, object);
+    Object.assign(d1, object);
+
+    const d2 = {
+      x: randRangeInt(this.width - d1.w, d1.w),
+      y: randRangeInt(this.height - d1.h, d1.h),
+    };
+
+    Object.assign(d2, d1);
 
     const o =
       object instanceof Environment
         ? object
-        : this.#createObjectInstance(type, this.settings, defaults);
+        : this.#createObjectInstance(type, this.settings, d2);
 
     this.newClient(o);
     this.envObjects.push(o);
@@ -281,9 +289,8 @@ class SimulationWorker extends SpatialHash {
 
   #envCalculations(object) {
     for (const near of this.findNear(
-      { x: object.x + object.width / 2, y: object.y + object.height / 2 },
-      Math.max(object.width, object.height) / 2 +
-        this.settings.constants.max_radius
+      { x: object.x + object.w / 2, y: object.y + object.h / 2 },
+      Math.max(object.w, object.h) / 2 + this.settings.constants.max_radius
     ))
       object.detectCollision(near);
   }

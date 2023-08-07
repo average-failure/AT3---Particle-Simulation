@@ -114,7 +114,7 @@ export const randInt = (max, offset = 0) => ~~(Math.random() * max) + offset;
  * @returns A random integer between max and min
  */
 export const randRangeInt = (max, min = 0) =>
-  ~~(Math.random() * (max - min)) + min;
+  ~~(Math.random() * (max - min) + min);
 
 /**
  * Generates a random number between two provided numbers

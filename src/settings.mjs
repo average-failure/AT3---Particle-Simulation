@@ -23,10 +23,8 @@ export const settings = {
     },
     mass_radius_ratio: 10,
 
-    max_width: 100,
-    min_width: 50,
-    max_height: 100,
-    min_height: 50,
+    max_width: 1000,
+    max_height: 1000,
 
     max_particles: 1000,
     max_environment_objects: 1000,

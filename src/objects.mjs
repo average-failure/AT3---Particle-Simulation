@@ -5,34 +5,48 @@ export class Rectangle extends Environment {
   constructor(id, settings, params) {
     super(id, settings, params);
 
+    if (params.w) {
+      if (params.w > this.settings.constants.max_width)
+        this.w = this.settings.constants.max_width;
+      else if (params.w < -this.settings.constants.max_width)
+        this.w = -this.settings.constants.max_width;
+      else this.w = params.w;
+    } else {
+      this.w = 10;
+      this.x -= this.w / 2;
+    }
+
+    if (params.h) {
+      if (params.h > this.settings.constants.max_height)
+        this.h = this.settings.constants.max_height;
+      else if (params.h < -this.settings.constants.max_height)
+        this.h = -this.settings.constants.max_height;
+      else this.h = params.h;
+    } else {
+      this.h = 10;
+      this.y -= this.h / 2;
+    }
+
+    if (this.w < 0) {
+      this.x += this.w;
+      this.w = Math.abs(this.w);
+    }
+
+    if (this.h < 0) {
+      this.y += this.h;
+      this.h = Math.abs(this.h);
+    }
+
     this.bounds = [
-      new Int16Array([
-        this.x,
-        this.x +
-          (this.width =
-            params.width ||
-            randRangeInt(
-              this.settings.constants.max_width,
-              this.settings.constants.min_width
-            )),
-      ]),
-      new Int16Array([
-        this.y,
-        this.y +
-          (this.height =
-            params.height ||
-            randRangeInt(
-              this.settings.constants.max_height,
-              this.settings.constants.min_height
-            )),
-      ]),
+      new Int16Array([this.x, this.x + this.w]),
+      new Int16Array([this.y, this.y + this.h]),
     ];
 
     this.measurements = new Int16Array([
-      this.width / 2,
-      this.height / 2,
-      this.x + this.width / 2,
-      this.y + this.height / 2,
+      this.w / 2,
+      this.h / 2,
+      this.x + this.w / 2,
+      this.y + this.h / 2,
     ]);
   }
 
