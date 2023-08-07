@@ -23,7 +23,13 @@ export const settings = {
     },
     mass_radius_ratio: 10,
 
+    max_width: 100,
+    min_width: 50,
+    max_height: 100,
+    min_height: 50,
+
     max_particles: 1000,
+    max_environment_objects: 1000,
   },
   variables: {
     /* mouse_collision_radius: 100,

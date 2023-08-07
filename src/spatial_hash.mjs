@@ -8,10 +8,7 @@ export class SpatialHash {
   constructor(settings) {
     this.settings = settings;
     this.grid = {};
-    this.particles = [];
     this.preCleanTime = performance.now();
-
-    this.ids = -1;
   }
 
   /**
@@ -26,6 +23,10 @@ export class SpatialHash {
     )}`;
   }
 
+  /**
+   * Adds a new client to the grid
+   * @param {*} client The client to add to the grid
+   */
   newClient(client) {
     const key = this.#hashKey(client.x, client.y);
     if (!this.grid[key]) this.grid[key] = new Set();
@@ -33,36 +34,11 @@ export class SpatialHash {
   }
 
   /**
-   * Adds the specified particle back to the grid
-   * @param {Particle} particle The instance of Particle to update
+   * Removes a specified client from the grid
+   * @param {*} client The client to remove
    */
-  addParticle(particle) {
-    if (!(particle instanceof Particle)) return;
-    const key = this.#hashKey(particle.x, particle.y);
-    if (!this.grid[key]) this.grid[key] = new Set();
-    this.grid[key].add(particle);
-  }
-
-  /**
-   * Deletes the specified particle from the grid and array
-   * @param {Particle} particle The instance of Particle to remove
-   */
-  deleteParticle(particle) {
-    if (!(particle instanceof Particle)) return;
-    const key = this.#hashKey(particle.x, particle.y);
-    this.grid[key]?.delete(particle);
-    const index = this.particles.indexOf(particle);
-    if (index > -1) this.particles.splice(index, 1);
-    this.#cleanup();
-  }
-
-  /**
-   * Removes the specified particle from the grid
-   * @param {Particle} particle The instance of Particle to remove
-   */
-  removeParticle(particle) {
-    if (!(particle instanceof Particle)) return;
-    this.grid[this.#hashKey(particle.x, particle.y)]?.delete(particle);
+  removeClient(client) {
+    this.grid[this.#hashKey(client.x, client.y)]?.delete(client);
     this.#cleanup();
   }
 

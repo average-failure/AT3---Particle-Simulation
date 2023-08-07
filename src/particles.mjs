@@ -9,8 +9,10 @@ export class Particle {
    */
   constructor(id, settings, { x, y, vx, vy, mass }) {
     if (!Number.isInteger(id)) throw "Error: Id not provided.";
-    if (!(x && y)) throw "Error: Position not provided.";
+    if (!(Number.isInteger(x) && Number.isInteger(y)))
+      throw "Error: Position not provided.";
     if (!settings) throw "Error: Settings not provided.";
+    this.id = id;
     this.x = x;
     this.y = y;
     this.vx = vx || randRange(50, -50);
@@ -29,8 +31,6 @@ export class Particle {
       this.radius = this.settings.constants.max_radius;
     else if (this.radius < this.settings.constants.min_radius)
       this.radius = this.settings.constants.min_radius;
-
-    this.id = id;
   }
 
   static getClassName() {
@@ -144,7 +144,7 @@ export class AttractorParticle extends Particle {
     super(id, settings, params);
 
     this.strength = params.strength || 100;
-    this.colour = "#1010ff";
+    this.colour = "#6060ff";
   }
 
   static getClassName() {
@@ -194,7 +194,7 @@ export class RepulserParticle extends Particle {
     super(id, settings, params);
 
     this.strength = params.strength || 100;
-    this.colour = "#10ff10";
+    this.colour = "#ff6060";
   }
 
   static getClassName() {

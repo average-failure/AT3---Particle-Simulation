@@ -1,8 +1,10 @@
 import * as PARTICLES from "./particles.mjs";
+import * as ENVIRONMENT from "./environment.mjs";
 import { randRangeInt } from "./utils.mjs";
 import { SpatialHash } from "./spatial_hash.mjs";
 import { settings } from "./settings.mjs";
 import { Renderer } from "./renderer.mjs";
+import { EnvironmentRenderer } from "./environment_renderer.mjs";
 
 class SimulationWorker extends SpatialHash {
   /**
@@ -12,6 +14,12 @@ class SimulationWorker extends SpatialHash {
   constructor(settings) {
     super(settings);
 
+    onmessage = this.#onMessage.bind(this);
+
+    this.pIds = this.oIds = -1;
+    this.particles = [];
+    this.envObjects = [];
+
     this.methods = [
       "animate",
       "addCanvas",
@@ -20,6 +28,7 @@ class SimulationWorker extends SpatialHash {
       "resizeCanvas",
       "updateVariable",
       "updateToggle",
+      "newObject",
     ];
 
     this.availableParticles = {
@@ -49,8 +58,6 @@ class SimulationWorker extends SpatialHash {
         ),
       ],
     };
-
-    onmessage = this.#onMessage.bind(this);
   }
 
   /**
@@ -68,8 +75,9 @@ class SimulationWorker extends SpatialHash {
    * Resizes the canvas to a given width and height
    * @param {Object} param0 An object containing a width and a height to resize the canvas to
    */
-  resizeCanvas({ width, height }) {
+  resizeCanvas([width, height]) {
     this.renderer.resizeCanvas(width, height);
+    this.envRenderer.resizeCanvas(width, height);
     this.width = width;
     this.height = height;
   }
@@ -77,16 +85,18 @@ class SimulationWorker extends SpatialHash {
   /**
    * Initialises the renderer
    * @param {OffscreenCanvas} canvas The canvas to draw the simulation on
+   * @param {OffscreenCanvas} envCanvas The canvas to draw the background on
    */
-  addCanvas(canvas) {
+  addCanvas([canvas, envCanvas]) {
     this.renderer = new Renderer(canvas, this.settings);
+    this.envRenderer = new EnvironmentRenderer(envCanvas, this.settings);
   }
 
   /**
    * Updates a specified variable simulation setting with a given value
    * @param {Object} param0 An object that contains a setting and a value
    */
-  updateVariable({ setting, value }) {
+  updateVariable([setting, value]) {
     this.settings.variables[setting] = value * 1;
   }
 
@@ -94,7 +104,7 @@ class SimulationWorker extends SpatialHash {
    * Updates a specified toggle simulation setting with a given value
    * @param {Object} param0 An object that contains a setting and a value
    */
-  updateToggle({ setting, value }) {
+  updateToggle([setting, value]) {
     this.settings.toggles[setting] = value;
   }
 
@@ -105,11 +115,13 @@ class SimulationWorker extends SpatialHash {
    * @param {settings} settings The settings of the particle
    * @returns A new instance of the selected particle type
    */
-  #createInstance(type, settings, params) {
+  #createParticleInstance(type, settings, params) {
     const SelectedClass = PARTICLES[type] || PARTICLES.Particle;
-    // Object.values(PARTICLES)[~~(Math.random() * 3)];
+    // Object.values(PARTICLES)[
+    //   ~~(Math.random() * Object.keys(PARTICLES).length)
+    // ];
 
-    return new SelectedClass(++this.ids, settings, params);
+    return new SelectedClass(++this.pIds, settings, params);
   }
 
   /**
@@ -117,7 +129,7 @@ class SimulationWorker extends SpatialHash {
    * @param {Particle} particle An instance of a Particle or an object containing parameters for the Particle to add to the hash
    * @param {String} type A string containing the type of particle to create
    */
-  newParticle({ particle, type }) {
+  newParticle([particle, type]) {
     if (!(this.particles.length < this.settings.constants.max_particles))
       return alert("Max particles reached!"); // TODO: Alert doesn't work (it is a method of the global window object); send message to main thread instead
 
@@ -141,13 +153,80 @@ class SimulationWorker extends SpatialHash {
     const p =
       particle instanceof PARTICLES.Particle
         ? particle
-        : this.#createInstance(type, this.settings, defaults);
+        : this.#createParticleInstance(type, this.settings, defaults);
 
     this.newClient(p);
     this.particles.push(p);
 
     this.renderer.resizeBuffers(this.particles);
     this.renderer.updateRadiusBuffer(p);
+  }
+
+  /**
+   * Deletes the specified particle from the grid and array
+   * @param {Particle} particle The instance of Particle to remove
+   */
+  deleteParticle(particle) {
+    this.removeClient(particle);
+    const index = this.particles.indexOf(particle);
+    if (index > -1) this.particles.splice(index, 1);
+  }
+
+  /**
+   * A helper method to create instances of a selected environment object type
+   * @param {String} type The type of object to create
+   * @param  {Object} params The parameters of the object
+   * @param {settings} settings The settings of the object
+   * @returns A new instance of the selected object type
+   */
+  #createObjectInstance(type, settings, params) {
+    const SelectedClass = ENVIRONMENT[type] || ENVIRONMENT.Rectangle;
+    // Object.values(ENVIRONMENT)[
+    //   ~~(Math.random() * Object.keys(ENVIRONMENT).length)
+    // ];
+
+    return new SelectedClass(++this.oIds, settings, params);
+  }
+
+  /**
+   * Adds a new Particle to the spatial hash grid and particles array
+   * @param {Environment} object An instance of a Particle or an object containing parameters for the Particle to add to the hash
+   * @param {String} type A string containing the type of particle to create
+   */
+  newObject([object, type]) {
+    if (
+      !(
+        this.envObjects.length < this.settings.constants.max_environment_objects
+      )
+    )
+      return alert("Max particles reached!"); // TODO: Alert doesn't work (it is a method of the global window object); send message to main thread instead
+
+    const defaults = {
+      mass: randRangeInt(
+        this.settings.constants.max_mass,
+        this.settings.constants.min_mass
+      ),
+      x: randRangeInt(
+        this.width - this.settings.radius(this.mass),
+        this.settings.radius(this.mass)
+      ),
+      y: randRangeInt(
+        this.height - this.settings.radius(this.mass),
+        this.settings.radius(this.mass)
+      ),
+    };
+
+    Object.assign(defaults, object);
+
+    const o =
+      object instanceof ENVIRONMENT.Environment
+        ? object
+        : this.#createObjectInstance(type, this.settings, defaults);
+
+    this.newClient(o);
+    this.envObjects.push(o);
+
+    this.envRenderer.render(this.envObjects);
   }
 
   // /**
@@ -175,7 +254,7 @@ class SimulationWorker extends SpatialHash {
    */
   #calculations(particle) {
     // console.time("remove");
-    this.removeParticle(particle);
+    this.removeClient(particle);
     // console.timeEnd("remove");
 
     // console.time("update");
@@ -195,8 +274,17 @@ class SimulationWorker extends SpatialHash {
     // console.timeEnd("collision");
 
     // console.time("new");
-    this.addParticle(particle);
+    this.newClient(particle);
     // console.timeEnd("new");
+  }
+
+  #envCalculations(object) {
+    for (const near of this.findNear(
+      { x: object.x + object.width / 2, y: object.y + object.height / 2 },
+      Math.max(object.width, object.height) / 2 +
+        this.settings.constants.max_radius
+    ))
+      object.detectCollision(near);
   }
 
   /**
@@ -204,6 +292,8 @@ class SimulationWorker extends SpatialHash {
    */
   animate() {
     for (const p of this.particles) this.#calculations(p);
+
+    for (const o of this.envObjects) this.#envCalculations(o);
 
     this.renderer.render(this.particles);
 

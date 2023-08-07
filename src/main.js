@@ -28,21 +28,33 @@ class SimulationMain {
         x: event.clientX - bounds.left,
         y: event.clientY - bounds.top,
       });
+      this.newObject({
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      });
     });
 
     this.domElements = {
-      particleCount: document.getElementById("particleCount"),
+      particleCount: document.querySelector("#stats > #particleCount"),
+      mouseMode: document.querySelector("#settings > #dropdowns #mouseMode"), // TODO
     };
     this.particleCount = 0;
   }
 
   #initCanvas() {
     const canvas = document.getElementById("canvas");
-    canvas
-      ? (this.canvas = canvas)
-      : document.body.appendChild(
-          (this.canvas = document.createElement("canvas"))
-        );
+    if (canvas) this.canvas = canvas;
+    else
+      document.body.appendChild(
+        (this.canvas = document.createElement("canvas"))
+      );
+
+    const envCanvas = document.getElementById("envCanvas");
+    if (envCanvas) this.envCanvas = envCanvas;
+    else
+      document.body.appendChild(
+        (this.envCanvas = document.createElement("canvas"))
+      );
   }
 
   #initWorker() {
@@ -53,15 +65,21 @@ class SimulationMain {
       return;
     }
 
-    const offscreen = this.canvas.transferControlToOffscreen();
-    this.worker.postMessage({ addCanvas: offscreen }, [offscreen]);
+    const offscreen = this.canvas.transferControlToOffscreen(),
+      envOffscreen = this.envCanvas.transferControlToOffscreen();
+    this.worker.postMessage({ addCanvas: [offscreen, envOffscreen] }, [
+      offscreen,
+      envOffscreen,
+    ]);
   }
 
   #onResize() {
-    const pixelRatio = window.devicePixelRatio,
-      width = (this.canvas.clientWidth * pixelRatio) | 0,
-      height = (this.canvas.clientHeight * pixelRatio) | 0;
-    this.messageWorker({ resizeCanvas: { width, height } });
+    // const pixelRatio = window.devicePixelRatio,
+    //   width = (this.canvas.clientWidth * pixelRatio) | 0,
+    //   height = (this.canvas.clientHeight * pixelRatio) | 0;
+    this.messageWorker({
+      resizeCanvas: [window.innerWidth, window.innerHeight],
+    });
   }
 
   messageWorker(message) {
@@ -69,8 +87,12 @@ class SimulationMain {
   }
 
   newParticle(particle, type) {
-    this.messageWorker({ newParticle: { particle, type } });
+    this.messageWorker({ newParticle: [particle, type] });
     this.domElements.particleCount.textContent = ++this.particleCount;
+  }
+
+  newObject(object, type) {
+    this.messageWorker({ newObject: [object, type] });
   }
 }
 
@@ -88,7 +110,7 @@ const variable_settings = {
         name: "COR",
       },
     },
-    { drag: { min: 0.99, value: 0.999, step: 0.001, name: "Drag" } },
+    { drag: { min: 0.9, value: 0.999, step: 0.001, name: "Drag" } },
     {
       softening_constant: {
         value: 0.15,
@@ -114,22 +136,27 @@ const toggle_settings = {
 for (const [event, settings] of Object.entries(variable_settings))
   for (const pair of settings)
     for (const [setting, options] of Object.entries(pair)) {
-      const slider = createSlider("#settings", options, setting);
+      const slider = createSlider("#settings > #sliders", options, setting);
       slider.addEventListener(event, function () {
-        sim.messageWorker({ updateVariable: { setting, value: this.value } });
+        sim.messageWorker({ updateVariable: [setting, this.value] });
       });
     }
 
 for (const [event, settings] of Object.entries(toggle_settings))
   for (const pair of settings)
     for (const [setting, options] of Object.entries(pair)) {
-      const checkbox = createCheckbox("#settings", options, setting),
-        sliderList = document.querySelector(`#settings #${setting}Slider`)
-          ?.parentElement.classList;
+      const checkbox = createCheckbox(
+          "#settings > #checkBoxes",
+          options,
+          setting
+        ),
+        sliderList = document.querySelector(
+          `#settings > #sliders #${setting}Slider`
+        )?.parentElement.classList;
       if (!options.value) sliderList?.add("hidden");
       checkbox.addEventListener(event, function () {
         sim.messageWorker({
-          updateToggle: { setting, value: this.checked },
+          updateToggle: [setting, this.checked],
         });
         sliderList?.[this.checked === true ? "remove" : "add"]("hidden");
       });
