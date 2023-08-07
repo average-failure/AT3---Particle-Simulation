@@ -1,5 +1,6 @@
 import * as PARTICLES from "./particles.mjs";
-import * as ENVIRONMENT from "./environment.mjs";
+import * as OBJECTS from "./objects.mjs";
+import { Environment } from "./environment.mjs";
 import { randRangeInt } from "./utils.mjs";
 import { SpatialHash } from "./spatial_hash.mjs";
 import { settings } from "./settings.mjs";
@@ -180,18 +181,18 @@ class SimulationWorker extends SpatialHash {
    * @returns A new instance of the selected object type
    */
   #createObjectInstance(type, settings, params) {
-    const SelectedClass = ENVIRONMENT[type] || ENVIRONMENT.Rectangle;
-    // Object.values(ENVIRONMENT)[
-    //   ~~(Math.random() * Object.keys(ENVIRONMENT).length)
+    const SelectedClass = OBJECTS[type] || OBJECTS.Rectangle;
+    // Object.values(OBJECTS)[
+    //   ~~(Math.random() * Object.keys(OBJECTS).length)
     // ];
 
     return new SelectedClass(++this.oIds, settings, params);
   }
 
   /**
-   * Adds a new Particle to the spatial hash grid and particles array
-   * @param {Environment} object An instance of a Particle or an object containing parameters for the Particle to add to the hash
-   * @param {String} type A string containing the type of particle to create
+   * Adds a new environment object to the spatial hash grid
+   * @param {Environment} object An instance of an environment object or an object containing parameters for the environment object to add to the hash
+   * @param {String} type A string containing the type of environment object to create
    */
   newObject([object, type]) {
     if (
@@ -219,7 +220,7 @@ class SimulationWorker extends SpatialHash {
     Object.assign(defaults, object);
 
     const o =
-      object instanceof ENVIRONMENT.Environment
+      object instanceof Environment
         ? object
         : this.#createObjectInstance(type, this.settings, defaults);
 

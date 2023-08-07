@@ -1,5 +1,19 @@
+import { createCheckbox, createSelect, createSlider } from "./utils.mjs";
+
 class SimulationMain {
   constructor() {
+    this.domElements = {
+      stats: {
+        particleCount: document.querySelector("#stats > #particleCount"),
+      },
+      sliders: {},
+      toggles: {},
+      dropdowns: {},
+    };
+    this.particleCount = 0;
+
+    this.#initDOMElements();
+
     this.#initCanvas();
     this.#initWorker();
 
@@ -24,21 +38,101 @@ class SimulationMain {
     this.canvas.addEventListener("mousedown", (event) => {
       event.preventDefault();
       const bounds = this.canvas.getBoundingClientRect();
-      this.newParticle({
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
-      });
-      this.newObject({
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
-      });
-    });
 
-    this.domElements = {
-      particleCount: document.querySelector("#stats > #particleCount"),
-      mouseMode: document.querySelector("#settings > #dropdowns #mouseMode"), // TODO
-    };
-    this.particleCount = 0;
+      switch (this.domElements.dropdowns.mouse_mode.value) {
+        case "New Object":
+          this.newObject(
+            {
+              x: event.clientX - bounds.left,
+              y: event.clientY - bounds.top,
+            },
+            this.domElements.dropdowns.object_type.value
+          );
+          break;
+        default:
+          this.newParticle(
+            {
+              x: event.clientX - bounds.left,
+              y: event.clientY - bounds.top,
+            },
+            this.domElements.dropdowns.particle_type.value
+          );
+          break;
+      }
+    });
+  }
+
+  async #initDOMElements() {
+    await this.#initSliders();
+    this.#initToggles();
+    this.#initDropdowns();
+  }
+
+  #initSliders() {
+    return new Promise(async (resolve) => {
+      const { sliders } = await import("./dom_elements.mjs");
+
+      for (const [event, settings] of Object.entries(sliders)) {
+        for (const pair of settings) {
+          for (const [setting, options] of Object.entries(pair)) {
+            const slider = createSlider(
+              ".settings > #sliders",
+              options,
+              setting
+            );
+
+            slider.addEventListener(event, function () {
+              sim.messageWorker({ updateVariable: [setting, this.value] });
+            });
+
+            this.domElements.sliders[setting] = slider;
+          }
+        }
+      }
+
+      resolve();
+    });
+  }
+
+  async #initToggles() {
+    const { toggles } = await import("./dom_elements.mjs");
+
+    for (const [event, settings] of Object.entries(toggles)) {
+      for (const pair of settings) {
+        for (const [setting, options] of Object.entries(pair)) {
+          const checkbox = createCheckbox(
+              ".settings > #checkBoxes",
+              options,
+              setting
+            ),
+            sliderList =
+              this.domElements.sliders[setting]?.parentElement.classList;
+
+          if (!options.value) sliderList?.add("hidden");
+
+          checkbox.addEventListener(event, function () {
+            sim.messageWorker({
+              updateToggle: [setting, this.checked],
+            });
+            sliderList?.[this.checked === true ? "remove" : "add"]("hidden");
+          });
+
+          this.domElements.toggles[setting] = checkbox;
+        }
+      }
+    }
+  }
+
+  async #initDropdowns() {
+    const { dropdowns } = await import("./dom_elements.mjs");
+
+    for (const [setting, options] of Object.entries(dropdowns)) {
+      this.domElements.dropdowns[setting] = createSelect(
+        ".settings > #dropdowns",
+        options,
+        setting
+      );
+    }
   }
 
   #initCanvas() {
@@ -88,7 +182,7 @@ class SimulationMain {
 
   newParticle(particle, type) {
     this.messageWorker({ newParticle: [particle, type] });
-    this.domElements.particleCount.textContent = ++this.particleCount;
+    this.domElements.stats.particleCount.textContent = ++this.particleCount;
   }
 
   newObject(object, type) {
@@ -96,76 +190,10 @@ class SimulationMain {
   }
 }
 
-import { createCheckbox, createSlider } from "./utils.mjs";
-
-const variable_settings = {
-  input: [
-    { gravity: { min: -50, max: 50, value: 9.8, step: 0.1, name: "Gravity" } },
-    { dt: { value: 0.1, step: 0.01, name: "Time" } },
-    {
-      coefficient_of_restitution: {
-        min: 0.25,
-        value: 0.95,
-        step: 0.01,
-        name: "COR",
-      },
-    },
-    { drag: { min: 0.9, value: 0.999, step: 0.001, name: "Drag" } },
-    {
-      softening_constant: {
-        value: 0.15,
-        step: 0.01,
-        name: "Softening Constant",
-      },
-    },
-    { attraction_radius: { value: 0.1, name: "Attraction Radius" } },
-    { attraction_strength: { max: 100, step: 1, name: "Attraction Strength" } },
-  ],
-};
-
-const toggle_settings = {
-  change: [
-    { gravity: { value: "checked", name: "Gravity" } },
-    { coefficient_of_restitution: { value: "checked", name: "COR" } },
-    { drag: { name: "Drag" } },
-    { show_velocity: { name: "Velocity" } },
-    { softening_constant: { value: "checked", name: "Softening Constant" } },
-  ],
-};
-
-for (const [event, settings] of Object.entries(variable_settings))
-  for (const pair of settings)
-    for (const [setting, options] of Object.entries(pair)) {
-      const slider = createSlider("#settings > #sliders", options, setting);
-      slider.addEventListener(event, function () {
-        sim.messageWorker({ updateVariable: [setting, this.value] });
-      });
-    }
-
-for (const [event, settings] of Object.entries(toggle_settings))
-  for (const pair of settings)
-    for (const [setting, options] of Object.entries(pair)) {
-      const checkbox = createCheckbox(
-          "#settings > #checkBoxes",
-          options,
-          setting
-        ),
-        sliderList = document.querySelector(
-          `#settings > #sliders #${setting}Slider`
-        )?.parentElement.classList;
-      if (!options.value) sliderList?.add("hidden");
-      checkbox.addEventListener(event, function () {
-        sim.messageWorker({
-          updateToggle: [setting, this.checked],
-        });
-        sliderList?.[this.checked === true ? "remove" : "add"]("hidden");
-      });
-    }
-
 const sim = new SimulationMain();
 console.log(sim);
 
-for (let i = 0; i < 100; ++i) sim.newParticle({}, "ChargedParticle");
+// for (let i = 0; i < 100; ++i) sim.newParticle({}, "ChargedParticle");
 
 sim.messageWorker({ animate: true });
 

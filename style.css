@@ -11,18 +11,29 @@
 #envCanvas {
   pointer-events: none;
 }
-#settings {
+.settings {
   position: absolute;
-  right: 0;
-  top: 0;
+  inset: 0;
+  width: fit-content;
+  height: fit-content;
   background-color: rgba(150, 150, 150, 0.4);
   padding: 20px;
   color: white;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 0;
 }
-.sliderContainer,
-.checkboxContainer {
-  margin: 20px;
-  display: block;
+.settings.left {
+  margin: auto auto auto 0;
+}
+.settings.right {
+  margin: auto 0 auto auto;
+}
+.container {
+  margin: 10px;
+  flex: 1;
+  overflow: auto;
 }
 #stats {
   position: absolute;
@@ -34,4 +45,8 @@
 }
 .hidden {
   display: none;
+}
+#temp {
+  display: none;
+  z-index: 100;
 }

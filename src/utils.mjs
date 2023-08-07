@@ -211,6 +211,8 @@ export const createSlider = (parentSelector, options, id) => {
 
   const container = document.createElement("div");
   container.classList.add("sliderContainer");
+  container.classList.add("container");
+
   if (id)
     container.innerHTML = `
       <label for="${id}Slider" class="sliderLabel">${name}</label>
@@ -250,6 +252,8 @@ export const createCheckbox = (parentSelector, options, id) => {
 
   const container = document.createElement("div");
   container.classList.add("checkboxContainer");
+  container.classList.add("container");
+
   if (id)
     container.innerHTML = `
       <label for="${id}Checkbox" class="checkboxLabel">${name}</label>
@@ -263,4 +267,41 @@ export const createCheckbox = (parentSelector, options, id) => {
   parentElement.appendChild(container);
 
   return container.querySelector(id ? `#${id}Checkbox` : ".checkbox");
+};
+
+/**
+ * Creates an input element of type select as a child of the given parent
+ * @param {String} parentSelector A string containing a css selector for the parent element
+ * @param {Object} options An object containing options for the dropdown
+ * @param {String} id The id of the select element
+ * @returns The select element
+ */
+export const createSelect = (parentSelector, options, id) => {
+  const { value, name, children } = options,
+    parentElement = document.querySelector(parentSelector);
+
+  const container = document.createElement("div");
+  container.classList.add("selectContainer");
+  container.classList.add("container");
+
+  if (id)
+    container.innerHTML = `
+      <label for="${id}Select" class="selectLabel">${name}</label>
+      <select id="${id}Select" class="select"></select>
+    `;
+  else
+    container.innerHTML = `
+      <div class="selectLabel">${name}</div>
+      <select class="select"></select>
+    `;
+
+  const element = container.querySelector(id ? `#${id}Select` : ".select");
+
+  for (const child of children || []) element.options.add(new Option(child));
+
+  if (value) element.value = value;
+
+  parentElement.appendChild(container);
+
+  return element;
 };
