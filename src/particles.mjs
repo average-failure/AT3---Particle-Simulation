@@ -1,3 +1,4 @@
+import { attract, repulse } from "./gravity_calculations.mjs";
 import { randRange, randRangeInt } from "./utils.mjs";
 
 export class Particle {
@@ -15,19 +16,13 @@ export class Particle {
     this.id = id;
     this.x = x;
     this.y = y;
-    this.vx = vx || randRange(50, -50);
-    this.vy = vy || randRange(10);
+    this.vx = vx || 0;
+    this.vy = vy || 0;
     this.settings = settings;
     this.mass =
       mass ||
-      randRangeInt(
-        this.settings.constants.max_mass,
-        this.settings.constants.min_mass
-      );
-    if (
-      (this.radius = this.settings.radius(mass)) >
-      this.settings.constants.max_radius
-    )
+      randRangeInt(this.settings.constants.max_mass, this.settings.constants.min_mass);
+    if ((this.radius = this.settings.radius(mass)) > this.settings.constants.max_radius)
       this.radius = this.settings.constants.max_radius;
     else if (this.radius < this.settings.constants.min_radius)
       this.radius = this.settings.constants.min_radius;
@@ -59,7 +54,6 @@ export class Particle {
         rvy = otherParticle.vy - this.vy;
 
       // Calculate the dot product of normalised and relative vectors
-      // Essentially, relative magnitude in normalised direction
       const speed =
         (rvx * nvx + rvy * nvy) *
         (this.settings.toggles.coefficient_of_restitution
@@ -123,9 +117,7 @@ export class Particle {
 
   updateColour() {
     this.colour = `hsl(${(this.colourComp =
-      Math.abs(this.vx / 2) + Math.abs(this.vy / 2))},100%,${
-      this.colourComp / 2 + 30
-    }%)`;
+      Math.abs(this.vx / 2) + Math.abs(this.vy / 2))},100%,${this.colourComp / 2 + 30}%)`;
   }
 
   updateCalculations(width, height) {
@@ -156,22 +148,7 @@ export class AttractorParticle extends Particle {
   }
 
   #attract(p) {
-    const dx = this.x - p.x,
-      dy = this.y - p.y;
-    const dSq = dx ** 2 + dy ** 2;
-
-    const f =
-      (this.strength * this.settings.variables.attraction_strength) /
-      (dSq *
-        Math.sqrt(
-          dSq +
-            (this.settings.toggles.softening_constant
-              ? this.settings.variables.softening_constant
-              : 0)
-        ));
-
-    p.vx += f * dx * this.settings.variables.dt;
-    p.vy += f * dy * this.settings.variables.dt;
+    attract(this, p, this.settings);
   }
 
   updateColour() {}
@@ -206,22 +183,7 @@ export class RepulserParticle extends Particle {
   }
 
   #repulse(p) {
-    const dx = this.x - p.x,
-      dy = this.y - p.y;
-    const dSq = dx ** 2 + dy ** 2;
-
-    const f =
-      (this.strength * 2.5 * this.settings.variables.repulsion_strength) /
-      (dSq *
-        Math.sqrt(
-          dSq +
-            (this.settings.toggles.softening_constant
-              ? this.settings.variables.softening_constant
-              : 0)
-        ));
-
-    p.vx -= f * dx * this.settings.variables.dt;
-    p.vy -= f * dy * this.settings.variables.dt;
+    repulse(this, p, this.settings);
   }
 
   updateColour() {}
@@ -257,41 +219,11 @@ export class ChargedParticle extends Particle {
   }
 
   #attract(p) {
-    const dx = this.x - p.x,
-      dy = this.y - p.y;
-    const dSq = dx ** 2 + dy ** 2;
-
-    const f =
-      (this.strength * this.settings.variables.attraction_strength) /
-      (dSq *
-        Math.sqrt(
-          dSq +
-            (this.settings.toggles.softening_constant
-              ? this.settings.variables.softening_constant
-              : 0)
-        ));
-
-    p.vx += f * dx * this.settings.variables.dt;
-    p.vy += f * dy * this.settings.variables.dt;
+    attract(this, p, this.settings);
   }
 
   #repulse(p) {
-    const dx = this.x - p.x,
-      dy = this.y - p.y;
-    const dSq = dx ** 2 + dy ** 2;
-
-    const f =
-      (this.strength * 2.5 * this.settings.variables.repulsion_strength) /
-      (dSq *
-        Math.sqrt(
-          dSq +
-            (this.settings.toggles.softening_constant
-              ? this.settings.variables.softening_constant
-              : 0)
-        ));
-
-    p.vx -= f * dx * this.settings.variables.dt;
-    p.vy -= f * dy * this.settings.variables.dt;
+    repulse(this, p, this.settings);
   }
 
   updateColour() {}

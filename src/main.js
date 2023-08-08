@@ -6,8 +6,8 @@ class SimulationMain extends DOMHandler {
 
     this.#initWorker();
 
-    this.#onResize();
-    addEventListener("resize", this.#onResize.bind(this));
+    this.onResize();
+    addEventListener("resize", this.onResize.bind(this));
   }
 
   #initWorker() {
@@ -29,7 +29,8 @@ class SimulationMain extends DOMHandler {
     ]);
   }
 
-  #onResize() {
+  onResize() {
+    super.onResize();
     // const pixelRatio = window.devicePixelRatio,
     //   width = (this.canvas.clientWidth * pixelRatio) | 0,
     //   height = (this.canvas.clientHeight * pixelRatio) | 0;

@@ -17,6 +17,12 @@ export class DOMHandler {
     this.#initDOMElements();
   }
 
+  onResize() {
+    this.overlay.width = window.innerWidth;
+    this.overlay.height = window.innerHeight;
+    this.ctx.strokeStyle = "#FFFFFF";
+  }
+
   async #initDOMElements() {
     await this.#initSliders();
     this.#initToggles();
@@ -30,14 +36,10 @@ export class DOMHandler {
       for (const [event, settings] of Object.entries(sliders)) {
         for (const pair of settings) {
           for (const [setting, options] of Object.entries(pair)) {
-            const slider = createSlider(
-              ".settings > #sliders",
-              options,
-              setting
-            );
+            const slider = createSlider(".settings > #sliders", options, setting);
 
-            slider.addEventListener(event, function () {
-              this.messageWorker({ updateVariable: [setting, this.value] });
+            slider.addEventListener(event, () => {
+              this.messageWorker({ updateVariable: [setting, slider.value] });
             });
 
             this.domElements.sliders[setting] = slider;
@@ -55,21 +57,16 @@ export class DOMHandler {
     for (const [event, settings] of Object.entries(toggles)) {
       for (const pair of settings) {
         for (const [setting, options] of Object.entries(pair)) {
-          const checkbox = createCheckbox(
-              ".settings > #checkBoxes",
-              options,
-              setting
-            ),
-            sliderList =
-              this.domElements.sliders[setting]?.parentElement.classList;
+          const checkbox = createCheckbox(".settings > #checkBoxes", options, setting),
+            sliderList = this.domElements.sliders[setting]?.parentElement.classList;
 
           if (!options.value) sliderList?.add("hidden");
 
-          checkbox.addEventListener(event, function () {
+          checkbox.addEventListener(event, () => {
             this.messageWorker({
-              updateToggle: [setting, this.checked],
+              updateToggle: [setting, checkbox.checked],
             });
-            sliderList?.[this.checked === true ? "remove" : "add"]("hidden");
+            sliderList?.[checkbox.checked === true ? "remove" : "add"]("hidden");
           });
 
           this.domElements.toggles[setting] = checkbox;
@@ -93,17 +90,17 @@ export class DOMHandler {
   initCanvas() {
     const canvas = document.getElementById("canvas");
     if (canvas) this.canvas = canvas;
-    else
-      document.body.appendChild(
-        (this.canvas = document.createElement("canvas"))
-      );
+    else document.body.appendChild((this.canvas = document.createElement("canvas")));
 
     const envCanvas = document.getElementById("envCanvas");
     if (envCanvas) this.envCanvas = envCanvas;
-    else
-      document.body.appendChild(
-        (this.envCanvas = document.createElement("canvas"))
-      );
+    else document.body.appendChild((this.envCanvas = document.createElement("canvas")));
+
+    const overlay = document.getElementById("overlay");
+    if (overlay) this.overlay = overlay;
+    else document.body.appendChild((this.overlay = document.createElement("canvas")));
+    this.ctx = this.overlay.getContext("2d");
+    this.ctx.strokeStyle = "#FFFFFF";
 
     this.#initListeners();
   }
@@ -127,6 +124,11 @@ export class DOMHandler {
     // TODO
   }
 
+  /**
+   * A helper method to get the mouse position
+   * @param {Event} event The mouse down, move, up or click event
+   * @returns The mouse position in an array
+   */
   #getMousePos(event) {
     const bounds = this.canvas.getBoundingClientRect();
     return [event.clientX - bounds.left, event.clientY - bounds.top];
@@ -140,10 +142,12 @@ export class DOMHandler {
 
       const m = this.#getMousePos(event);
 
+      this.pre = [m[0], m[1]];
+      this.mouseDown = true;
+
       switch (this.domElements.dropdowns.mouse_mode.value) {
         case "New Object":
-          this.mouseDown = true;
-          this.pre = [m[0], m[1]];
+          this.event = "object";
 
           const style = this.domElements.temp.style;
 
@@ -153,10 +157,7 @@ export class DOMHandler {
 
           break;
         default:
-          this.newParticle(
-            { x: m[0], y: m[1] },
-            this.domElements.dropdowns.particle_type.value
-          );
+          this.event = "particle";
           break;
       }
     });
@@ -166,27 +167,39 @@ export class DOMHandler {
 
       const m = this.#getMousePos(event);
 
-      const style = this.domElements.temp.style;
-
       let dx = m[0] - this.pre[0],
         dy = m[1] - this.pre[1];
 
-      if (Math.abs(dx) > settings.constants.max_width)
-        dx = settings.constants.max_width;
-      if (Math.abs(dy) > settings.constants.max_height)
-        dy = settings.constants.max_height;
+      switch (this.event) {
+        case "object":
+          const style = this.domElements.temp.style;
 
-      style.width = dx;
-      style.height = dy;
+          if (Math.abs(dx) > settings.constants.max_width)
+            dx = settings.constants.max_width;
+          if (Math.abs(dy) > settings.constants.max_height)
+            dy = settings.constants.max_height;
 
-      if (dx < 0) {
-        style.left = m[0];
-        style.width = Math.abs(dx);
-      }
+          style.width = dx;
+          style.height = dy;
 
-      if (dy < 0) {
-        style.top = m[1];
-        style.height = Math.abs(dy);
+          if (dx < 0) {
+            style.left = m[0];
+            style.width = Math.abs(dx);
+          }
+
+          if (dy < 0) {
+            style.top = m[1];
+            style.height = Math.abs(dy);
+          }
+          break;
+        case "particle":
+          this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+          this.ctx.beginPath();
+          this.ctx.moveTo(this.pre[0], this.pre[1]);
+          this.ctx.lineTo(m[0], m[1]);
+          this.ctx.stroke();
+          this.ctx.closePath();
+          break;
       }
     });
 
@@ -195,30 +208,59 @@ export class DOMHandler {
 
       const m = this.#getMousePos(event);
 
-      switch (this.domElements.dropdowns.object_type.value) {
-        case "Circle":
-          this.newObject({
-            x: this.pre[0],
-            y: this.pre[1],
-            r: 3 /**change this later */,
-          });
+      const dx = m[0] - this.pre[0],
+        dy = m[1] - this.pre[1];
+
+      switch (this.event) {
+        case "object":
+          switch (this.domElements.dropdowns.object_type.value) {
+            case "GravityWell":
+              const d = Math.sqrt(dx ** 2 + dy ** 2);
+              this.newObject(
+                {
+                  x: this.pre[0],
+                  y: this.pre[1],
+                  r: d,
+                  strength: d ** 1.5,
+                },
+                "GravityWell"
+              );
+              break;
+            case "Circle":
+              this.newObject(
+                {
+                  x: this.pre[0],
+                  y: this.pre[1],
+                  r: 3 /**change this later */,
+                },
+                "Circle"
+              );
+              break;
+            default:
+              this.newObject(
+                { x: this.pre[0], y: this.pre[1], w: dx, h: dy },
+                "Rectangle"
+              );
+              break;
+          }
+
+          const style = this.domElements.temp.style;
+
+          style.display = "none";
+          style.width = style.height = 0;
+
           break;
-        default:
-          this.newObject({
-            x: this.pre[0],
-            y: this.pre[1],
-            w: m[0] - this.pre[0],
-            h: m[1] - this.pre[1],
-          });
+        case "particle":
+          this.newParticle(
+            { x: this.pre[0], y: this.pre[1], vx: dx, vy: dy },
+            this.domElements.dropdowns.particle_type.value
+          );
+          this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+
           break;
       }
 
       this.mouseDown = false;
-
-      const style = this.domElements.temp.style;
-
-      style.display = "none";
-      style.width = style.height = 0;
     });
   }
 }

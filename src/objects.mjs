@@ -1,5 +1,5 @@
 import { Environment } from "./environment.mjs";
-import { randRangeInt } from "./utils.mjs";
+import { attract, repulse } from "./gravity_calculations.mjs";
 
 export class Rectangle extends Environment {
   constructor(id, settings, params) {
@@ -94,6 +94,10 @@ export class Rectangle extends Environment {
       }
     }
   }
+
+  update([near]) {
+    for (const p of near) this.detectCollision(p);
+  }
 }
 
 export class Circle extends Environment {
@@ -109,5 +113,41 @@ export class Circle extends Environment {
 
   getClassName() {
     return Circle.getClassName();
+  }
+}
+
+export class GravityWell extends Environment {
+  constructor(id, settings, params) {
+    super(id, settings, params);
+
+    this.strength = params.strength || 1000;
+    this.r = params.r || 100;
+    this.force = params.force || [-1, 1][~~(Math.random() * 2)];
+  }
+
+  static getClassName() {
+    return "GravityWell";
+  }
+
+  getClassName() {
+    return GravityWell.getClassName();
+  }
+
+  reverseForce() {
+    this.force *= -1;
+  }
+
+  #attract(p) {
+    attract(this, p, this.settings);
+  }
+
+  #repulse(p) {
+    repulse(this, p, this.settings);
+  }
+
+  update([near]) {
+    for (const p of near)
+      if (this.force > 0) this.#attract(p);
+      else this.#repulse(p);
   }
 }

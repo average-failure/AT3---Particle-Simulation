@@ -1,10 +1,10 @@
 export class Renderer {
   constructor(canvas, settings) {
-    this.ctx = (this.canvas = canvas).getContext("2d", { alpha: false });
+    this.ctx = (this.canvas = canvas).getContext("2d");
     this.drawCtx = (this.drawCanvas = new OffscreenCanvas(
       (this.width = canvas.width),
       (this.height = canvas.height)
-    )).getContext("2d", { alpha: false });
+    )).getContext("2d");
 
     this.settings = settings;
 
@@ -94,6 +94,7 @@ export class Renderer {
     this.drawCtx.clearRect(0, 0, this.width, this.height);
     this.drawParticles(particles);
 
+    this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.drawCanvas, 0, 0);
   }
 }

@@ -1,14 +1,16 @@
 * {
   box-sizing: border-box;
 }
-#canvas,
-#envCanvas {
+canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
-#envCanvas {
+#canvas {
+  z-index: 10;
+}
+.noPointer {
   pointer-events: none;
 }
 .settings {
@@ -23,6 +25,7 @@
   flex-direction: row;
   align-items: stretch;
   min-height: 0;
+  z-index: 100;
 }
 .settings.left {
   margin: auto auto auto 0;

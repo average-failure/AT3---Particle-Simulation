@@ -19,7 +19,9 @@ class SimulationWorker extends SpatialHash {
 
     this.pIds = this.oIds = -1;
     this.particles = [];
-    this.envObjects = [];
+
+    this.env = {};
+    for (const o of Object.keys(OBJECTS)) this.env[o] = [];
 
     this.methods = [
       "animate",
@@ -58,6 +60,16 @@ class SimulationWorker extends SpatialHash {
                 2)
         ),
       ],
+    };
+
+    this.availableObjects = {
+      Rectangle: (object) => [
+        this.findNear(
+          { x: object.x + object.w / 2, y: object.y + object.h / 2 },
+          Math.max(object.w, object.h) / 2 + this.settings.constants.max_radius
+        ),
+      ],
+      GravityWell: (object) => [this.findNear(object, object.r)],
     };
   }
 
@@ -202,7 +214,8 @@ class SimulationWorker extends SpatialHash {
   newObject([object, type]) {
     if (
       !(
-        this.envObjects.length < this.settings.constants.max_environment_objects
+        Object.values(this.env).flat().length <
+        this.settings.constants.max_environment_objects
       )
     )
       return alert("Max particles reached!"); // TODO: Alert doesn't work (it is a method of the global window object); send message to main thread instead
@@ -233,9 +246,9 @@ class SimulationWorker extends SpatialHash {
         : this.#createObjectInstance(type, this.settings, d2);
 
     this.newClient(o);
-    this.envObjects.push(o);
+    this.env[o.getClassName()].push(o);
 
-    this.envRenderer.render(this.envObjects);
+    this.envRenderer.render(this.env);
   }
 
   // /**
@@ -288,11 +301,7 @@ class SimulationWorker extends SpatialHash {
   }
 
   #envCalculations(object) {
-    for (const near of this.findNear(
-      { x: object.x + object.w / 2, y: object.y + object.h / 2 },
-      Math.max(object.w, object.h) / 2 + this.settings.constants.max_radius
-    ))
-      object.detectCollision(near);
+    object.update?.(this.availableObjects[object.getClassName()]?.(object));
   }
 
   /**
@@ -301,7 +310,7 @@ class SimulationWorker extends SpatialHash {
   animate() {
     for (const p of this.particles) this.#calculations(p);
 
-    for (const o of this.envObjects) this.#envCalculations(o);
+    for (const o of Object.values(this.env).flat()) this.#envCalculations(o);
 
     this.renderer.render(this.particles);
 
