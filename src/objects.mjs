@@ -65,8 +65,8 @@ export class Rectangle extends Environment {
 
     const dx = p.x - this.measurements[2],
       dy = p.y - this.measurements[3],
-      w = p.radius + this.measurements[0],
-      h = p.radius + this.measurements[1],
+      w = p.r + this.measurements[0],
+      h = p.r + this.measurements[1],
       cw = w * dy,
       ch = h * dx;
 
@@ -74,21 +74,21 @@ export class Rectangle extends Environment {
       if (cw > ch) {
         if (cw > -ch) {
           // Bottom
-          p.y = p.radius + this.bounds[1][1];
+          p.y = p.r + this.bounds[1][1];
           p.vy = Math.abs(p.vy) * cor;
         } else {
           // Left
-          p.x = this.bounds[0][0] - p.radius;
+          p.x = this.bounds[0][0] - p.r;
           p.vx = -Math.abs(p.vx) * cor;
         }
       } else {
         if (cw > -ch) {
           // Right
-          p.x = p.radius + this.bounds[0][1];
+          p.x = p.r + this.bounds[0][1];
           p.vx = Math.abs(p.vx) * cor;
         } else {
           // Top
-          p.y = this.bounds[1][0] - p.radius;
+          p.y = this.bounds[1][0] - p.r;
           p.vy = -Math.abs(p.vy) * cor;
         }
       }
@@ -104,7 +104,7 @@ export class Circle extends Environment {
   constructor(id, settings, params) {
     super(id, settings, params);
 
-    this.radius = params.radius;
+    this.r = params.r;
   }
 
   static getClassName() {
@@ -113,6 +113,34 @@ export class Circle extends Environment {
 
   getClassName() {
     return Circle.getClassName();
+  }
+
+  detectCollision(p) {
+    const dx = this.x - p.x,
+      dy = this.y - p.y;
+    const dSq = dx ** 2 + dy ** 2;
+
+    if (dSq <= (this.r + p.r) ** 2) {
+      const d = Math.sqrt(dSq);
+
+      const nvx = dx / d,
+        nvy = dy / d;
+
+      const speed =
+        (p.vx * nvx + p.vy * nvy) *
+        (this.settings.toggles.coefficient_of_restitution
+          ? this.settings.variables.coefficient_of_restitution
+          : 1);
+
+      if (speed < 0) return;
+
+      p.vx -= speed * nvx * 2;
+      p.vy -= speed * nvy * 2;
+    }
+  }
+
+  update([near]) {
+    for (const p of near) this.detectCollision(p);
   }
 }
 

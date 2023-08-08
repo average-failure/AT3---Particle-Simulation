@@ -98,24 +98,23 @@ export class EnvironmentRenderer {
       r = this.radiusBufferData[i];
 
       if (objects[i] instanceof GravityWell) {
-        const o = objects[i],
-          grd = this.drawCtx.createRadialGradient(x, y, 0, x, y, r);
-        grd.addColorStop(0, o.force > 0 ? "#2020FFC0" : "#FF2020C0");
+        const grd = this.drawCtx.createRadialGradient(x, y, 0, x, y, r);
+        grd.addColorStop(0, objects[i].force > 0 ? "#2020FFC0" : "#FF2020C0");
         grd.addColorStop(1, "#00000000");
         this.drawCtx.fillStyle = grd;
-      }
+      } else this.drawCtx.fillStyle = "#FFFFFF";
 
       this.drawCtx.beginPath();
       this.drawCtx.arc(x, y, r, 0, Math.PI * 2);
       this.drawCtx.fill();
       this.drawCtx.closePath();
-      this.drawCtx.fillStyle = "#FFFFFF";
     }
   }
 
   draw({ Rectangle, Circle, GravityWell }) {
-    this.drawRect(Rectangle);
     this.drawCircle(Circle.concat(GravityWell));
+    this.drawCtx.fillStyle = "#FFFFFF";
+    this.drawRect(Rectangle);
   }
 
   render(objects) {

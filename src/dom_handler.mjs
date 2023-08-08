@@ -57,7 +57,7 @@ export class DOMHandler {
     for (const [event, settings] of Object.entries(toggles)) {
       for (const pair of settings) {
         for (const [setting, options] of Object.entries(pair)) {
-          const checkbox = createCheckbox(".settings > #checkBoxes", options, setting),
+          const checkbox = createCheckbox(".settings > #checkboxes", options, setting),
             sliderList = this.domElements.sliders[setting]?.parentElement.classList;
 
           if (!options.value) sliderList?.add("hidden");
@@ -231,7 +231,7 @@ export class DOMHandler {
                 {
                   x: this.pre[0],
                   y: this.pre[1],
-                  r: 3 /**change this later */,
+                  r: Math.sqrt(dx ** 2 + dy ** 2),
                 },
                 "Circle"
               );

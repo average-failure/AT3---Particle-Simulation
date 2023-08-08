@@ -69,6 +69,12 @@ class SimulationWorker extends SpatialHash {
           Math.max(object.w, object.h) / 2 + this.settings.constants.max_radius
         ),
       ],
+      Circle: (object) => [
+        this.findNear(
+          { x: object.x, y: object.y },
+          object.r + this.settings.constants.max_radius
+        ),
+      ],
       GravityWell: (object) => [this.findNear(object, object.r)],
     };
   }
@@ -245,7 +251,6 @@ class SimulationWorker extends SpatialHash {
         ? object
         : this.#createObjectInstance(type, this.settings, d2);
 
-    this.newClient(o);
     this.env[o.getClassName()].push(o);
 
     this.envRenderer.render(this.env);
@@ -290,7 +295,7 @@ class SimulationWorker extends SpatialHash {
     // console.time("collision");
     for (const near of this.findNear(
       particle,
-      particle.radius + this.settings.constants.max_radius
+      particle.r + this.settings.constants.max_radius
     ))
       particle.detectCollision(near);
     // console.timeEnd("collision");

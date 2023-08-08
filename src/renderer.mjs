@@ -60,7 +60,7 @@ export class Renderer {
   }
 
   updateRadiusBuffer(p) {
-    this.radiusBufferData[p.id] = p.radius;
+    this.radiusBufferData[p.id] = p.r;
   }
 
   drawParticles(particles) {

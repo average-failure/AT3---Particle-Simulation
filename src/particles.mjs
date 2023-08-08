@@ -22,10 +22,10 @@ export class Particle {
     this.mass =
       mass ||
       randRangeInt(this.settings.constants.max_mass, this.settings.constants.min_mass);
-    if ((this.radius = this.settings.radius(mass)) > this.settings.constants.max_radius)
-      this.radius = this.settings.constants.max_radius;
-    else if (this.radius < this.settings.constants.min_radius)
-      this.radius = this.settings.constants.min_radius;
+    if ((this.r = this.settings.radius(mass)) > this.settings.constants.max_radius)
+      this.r = this.settings.constants.max_radius;
+    else if (this.r < this.settings.constants.min_radius)
+      this.r = this.settings.constants.min_radius;
   }
 
   static getClassName() {
@@ -42,7 +42,7 @@ export class Particle {
       dy = this.y - otherParticle.y;
     const dSq = dx ** 2 + dy ** 2;
 
-    if (dSq <= (this.radius + otherParticle.radius) ** 2) {
+    if (dSq <= (this.r + otherParticle.r) ** 2) {
       const d = Math.sqrt(dSq);
 
       // Normalised vectors
@@ -79,20 +79,20 @@ export class Particle {
       ? this.settings.variables.coefficient_of_restitution
       : 1;
     switch (true) {
-      case (diff = this.x - this.radius) < 0:
-        this.x = this.radius;
+      case (diff = this.x - this.r) < 0:
+        this.x = this.r;
         this.vx = Math.abs(this.vx) * cor + diff;
         break;
-      case (diff = this.x + this.radius) > width:
-        this.x = width - this.radius;
+      case (diff = this.x + this.r) > width:
+        this.x = width - this.r;
         this.vx = -Math.abs(this.vx) * cor - (width - diff);
         break;
-      case (diff = this.y - this.radius) < 0:
-        this.y = this.radius;
+      case (diff = this.y - this.r) < 0:
+        this.y = this.r;
         this.vy = Math.abs(this.vy) * cor + diff;
         break;
-      case (diff = this.y + this.radius) > height:
-        this.y = height - this.radius;
+      case (diff = this.y + this.r) > height:
+        this.y = height - this.r;
         this.vy = -Math.abs(this.vy) * cor - (height - diff);
         break;
     }

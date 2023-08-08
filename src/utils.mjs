@@ -11,8 +11,7 @@ const randColour = (mix, mixEffect = 2) => {
     colour.forEach((elem, idx) => {
       elem = Math.floor(
         (elem +
-          ((mix instanceof Array ? mix : Object.values(mix))[idx] || elem) *
-            mixEffect) /
+          ((mix instanceof Array ? mix : Object.values(mix))[idx] || elem) * mixEffect) /
           (mixEffect + 1)
       );
     });
@@ -113,8 +112,7 @@ export const randInt = (max, offset = 0) => ~~(Math.random() * max) + offset;
  * @param {Number} min The minimum number
  * @returns A random integer between max and min
  */
-export const randRangeInt = (max, min = 0) =>
-  ~~(Math.random() * (max - min) + min);
+export const randRangeInt = (max, min = 0) => ~~(Math.random() * (max - min) + min);
 
 /**
  * Generates a random number between two provided numbers
