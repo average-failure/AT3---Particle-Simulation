@@ -1,8 +1,5 @@
 export class Environment {
-  constructor(id, settings, { x, y }) {
-    if (!Number.isInteger(id)) throw "Error: Id not provided.";
-    if (!(Number.isInteger(x) && Number.isInteger(y)))
-      throw "Error: Position not provided.";
+  constructor(id, settings, { x, y } = {}) {
     if (!settings) throw "Error: Settings not provided.";
     this.id = id;
     this.settings = settings;

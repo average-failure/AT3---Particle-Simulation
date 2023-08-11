@@ -50,6 +50,7 @@ class SimulationMain extends DOMHandler {
 
   newObject(object, type) {
     this.messageWorker({ newObject: [object, type] });
+    this.domElements.stats.objectCount.textContent = ++this.objectCount;
   }
 }
 

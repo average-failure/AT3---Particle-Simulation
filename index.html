@@ -4,9 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Particle Simulation</title>
-    <!-- Main css -->
     <link rel="stylesheet" href="style.css" />
-    <!-- Main script -->
+    <script async src="src/prototype_changes.js"></script>
     <script defer src="src/main.js" type="module"></script>
   </head>
   <body>
@@ -14,7 +13,12 @@
     <canvas id="envCanvas" class="noPointer"></canvas>
     <canvas id="overlay" class="noPointer"></canvas>
 
-    <div id="stats"><div id="particleCount">0</div></div>
+    <div id="stats">
+      Particles:
+      <div id="particleCount">0</div>
+      Objects:
+      <div id="objectCount">0</div>
+    </div>
 
     <div class="settings right">
       <div id="sliders"></div>
@@ -24,7 +28,5 @@
     <div class="settings left">
       <div id="checkboxes"></div>
     </div>
-
-    <div id="temp"></div>
   </body>
 </html>

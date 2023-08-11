@@ -72,7 +72,7 @@ export const dropdowns = {
   },
   object_type: {
     name: "Object Type",
-    children: Object.keys(OBJECTS),
+    children: [...Object.keys(OBJECTS), "FlowControl"],
     value: "Rectangle",
   },
 };

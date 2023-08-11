@@ -104,7 +104,7 @@ export class Circle extends Environment {
   constructor(id, settings, params) {
     super(id, settings, params);
 
-    this.r = params.r;
+    this.r = params.r || 15;
   }
 
   static getClassName() {
@@ -122,6 +122,11 @@ export class Circle extends Environment {
 
     if (dSq <= (this.r + p.r) ** 2) {
       const d = Math.sqrt(dSq);
+
+      const angle = Math.atan2(dy, dx);
+
+      p.x = this.x - (this.r + p.r) * Math.cos(angle);
+      p.y = this.y - (this.r + p.r) * Math.sin(angle);
 
       const nvx = dx / d,
         nvy = dy / d;

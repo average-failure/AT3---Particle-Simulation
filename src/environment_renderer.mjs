@@ -15,12 +15,22 @@ export class EnvironmentRenderer {
         maxByteLength: this.settings.constants.max_environment_objects * 4 * 2,
       })
     );
-    this.positionBufferData = new Int16Array(
+    this.circlePositionBufferData = new Int16Array(
       new ArrayBuffer(0, {
         maxByteLength: this.settings.constants.max_environment_objects * 2 * 2,
       })
     );
-    this.radiusBufferData = new Int16Array(
+    this.circleRadiusBufferData = new Int16Array(
+      new ArrayBuffer(0, {
+        maxByteLength: this.settings.constants.max_environment_objects * 2,
+      })
+    );
+    this.wellPositionBufferData = new Int16Array(
+      new ArrayBuffer(0, {
+        maxByteLength: this.settings.constants.max_environment_objects * 2 * 2,
+      })
+    );
+    this.wellRadiusBufferData = new Int16Array(
       new ArrayBuffer(0, {
         maxByteLength: this.settings.constants.max_environment_objects * 2,
       })
@@ -45,10 +55,12 @@ export class EnvironmentRenderer {
    * Resizes the buffers to contain the object data
    * @param {Array} objects An array containing objects
    */
-  resizeBoundsBuffer({ Rectangle, Circle, GravityWell }) {
+  resizeBuffers({ Rectangle, Circle, GravityWell }) {
     this.boundsBufferData.buffer.resize(Rectangle.length * 4 * 2);
-    this.positionBufferData.buffer.resize((Circle.length + GravityWell.length) * 2 * 2);
-    this.radiusBufferData.buffer.resize((Circle.length + GravityWell.length) * 2);
+    this.circlePositionBufferData.buffer.resize(Circle.length * 2 * 2);
+    this.circleRadiusBufferData.buffer.resize(Circle.length * 2);
+    this.wellPositionBufferData.buffer.resize(GravityWell.length * 2 * 2);
+    this.wellRadiusBufferData.buffer.resize(GravityWell.length * 2);
   }
 
   /**
@@ -66,16 +78,25 @@ export class EnvironmentRenderer {
 
   updateCircleData(objects) {
     objects.forEach((o, i) => {
-      this.positionBufferData[i * 2] = o.x;
-      this.positionBufferData[i * 2 + 1] = o.y;
-      this.radiusBufferData[i] = o.r;
+      this.circlePositionBufferData[i * 2] = o.x;
+      this.circlePositionBufferData[i * 2 + 1] = o.y;
+      this.circleRadiusBufferData[i] = o.r;
+    });
+  }
+
+  updateWellData(objects) {
+    objects.forEach((o, i) => {
+      this.wellPositionBufferData[i * 2] = o.x;
+      this.wellPositionBufferData[i * 2 + 1] = o.y;
+      this.wellRadiusBufferData[i] = o.r;
     });
   }
 
   updateData(objects) {
-    this.resizeBoundsBuffer(objects);
+    this.resizeBuffers(objects);
     this.updateBoundsData(objects.Rectangle);
-    this.updateCircleData(objects.Circle.concat(objects.GravityWell));
+    this.updateCircleData(objects.Circle);
+    this.updateWellData(objects.GravityWell);
   }
 
   drawRect(objects) {
@@ -93,16 +114,9 @@ export class EnvironmentRenderer {
   drawCircle(objects) {
     let x, y, r;
     for (let i = 0, len = objects.length; i < len; i++) {
-      x = this.positionBufferData[i * 2];
-      y = this.positionBufferData[i * 2 + 1];
-      r = this.radiusBufferData[i];
-
-      if (objects[i] instanceof GravityWell) {
-        const grd = this.drawCtx.createRadialGradient(x, y, 0, x, y, r);
-        grd.addColorStop(0, objects[i].force > 0 ? "#2020FFC0" : "#FF2020C0");
-        grd.addColorStop(1, "#00000000");
-        this.drawCtx.fillStyle = grd;
-      } else this.drawCtx.fillStyle = "#FFFFFF";
+      x = this.circlePositionBufferData[i * 2];
+      y = this.circlePositionBufferData[i * 2 + 1];
+      r = this.circleRadiusBufferData[i];
 
       this.drawCtx.beginPath();
       this.drawCtx.arc(x, y, r, 0, Math.PI * 2);
@@ -111,9 +125,31 @@ export class EnvironmentRenderer {
     }
   }
 
-  draw({ Rectangle, Circle, GravityWell }) {
-    this.drawCircle(Circle.concat(GravityWell));
+  drawWell(objects) {
+    let x, y, r;
+    for (let i = 0, len = objects.length; i < len; i++) {
+      x = this.wellPositionBufferData[i * 2];
+      y = this.wellPositionBufferData[i * 2 + 1];
+      r = this.wellRadiusBufferData[i];
+
+      const grd = this.drawCtx.createRadialGradient(x, y, 0, x, y, r);
+      grd.addColorStop(0, objects[i].force > 0 ? "#2020FFC0" : "#FF2020C0");
+      grd.addColorStop(0.9, objects[i].force > 0 ? "#2020FF20" : "#FF202020");
+      grd.addColorStop(1, objects[i].force > 0 ? "#2020FF00" : "#FF202000");
+      this.drawCtx.fillStyle = grd;
+
+      this.drawCtx.beginPath();
+      this.drawCtx.arc(x, y, r, 0, Math.PI * 2);
+      this.drawCtx.fill();
+      this.drawCtx.closePath();
+    }
+  }
+
+  draw({ Rectangle, Circle, GravityWell, FlowControl }) {
+    this.drawWell(GravityWell);
+    for (const f of FlowControl) f.render(this.drawCtx);
     this.drawCtx.fillStyle = "#FFFFFF";
+    this.drawCircle(Circle);
     this.drawRect(Rectangle);
   }
 

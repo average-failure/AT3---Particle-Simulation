@@ -1,5 +1,6 @@
 import * as PARTICLES from "./particles.mjs";
 import * as OBJECTS from "./objects.mjs";
+import { FlowControl } from "./flow_control.mjs";
 import { Environment } from "./environment.mjs";
 import { randRangeInt } from "./utils.mjs";
 import { SpatialHash } from "./spatial_hash.mjs";
@@ -20,7 +21,7 @@ class SimulationWorker extends SpatialHash {
     this.pIds = this.oIds = -1;
     this.particles = [];
 
-    this.env = {};
+    this.env = { FlowControl: [] };
     for (const o of Object.keys(OBJECTS)) this.env[o] = [];
 
     this.methods = [
@@ -32,6 +33,7 @@ class SimulationWorker extends SpatialHash {
       "updateVariable",
       "updateToggle",
       "newObject",
+      "flow",
     ];
 
     this.availableParticles = {
@@ -66,7 +68,8 @@ class SimulationWorker extends SpatialHash {
       Rectangle: (object) => [
         this.findNear(
           { x: object.x + object.w / 2, y: object.y + object.h / 2 },
-          Math.max(object.w, object.h) / 2 + this.settings.constants.max_radius
+          Math.sqrt(object.measurements[0] ** 2 + object.measurements[1] ** 2) +
+            this.settings.constants.max_radius
         ),
       ],
       Circle: (object) => [
@@ -125,6 +128,21 @@ class SimulationWorker extends SpatialHash {
    */
   updateToggle([setting, value]) {
     this.settings.toggles[setting] = value;
+  }
+
+  flow([mode, [x, y]]) {
+    switch (mode) {
+      case "new":
+        this.env.FlowControl.push(new FlowControl(this.settings, { x, y }));
+        break;
+      case "next":
+        this.env.FlowControl.at(-1).nextFlow(x, y);
+        break;
+      case "end":
+        this.env.FlowControl.at(-1).endFlow(x, y);
+        this.envRenderer.render(this.env);
+        break;
+    }
   }
 
   /**
@@ -226,30 +244,17 @@ class SimulationWorker extends SpatialHash {
     )
       return alert("Max particles reached!"); // TODO: Alert doesn't work (it is a method of the global window object); send message to main thread instead
 
-    const d1 = {
-      w: randRangeInt(
-        this.settings.constants.max_width,
-        -this.settings.constants.max_width
-      ),
-      h: randRangeInt(
-        this.settings.constants.max_height,
-        -this.settings.constants.max_height
-      ),
+    const d = {
+      x: randRangeInt(this.width, 0),
+      y: randRangeInt(this.height, 0),
     };
 
-    Object.assign(d1, object);
-
-    const d2 = {
-      x: randRangeInt(this.width - d1.w, d1.w),
-      y: randRangeInt(this.height - d1.h, d1.h),
-    };
-
-    Object.assign(d2, d1);
+    Object.assign(d, object);
 
     const o =
       object instanceof Environment
         ? object
-        : this.#createObjectInstance(type, this.settings, d2);
+        : this.#createObjectInstance(type, this.settings, d);
 
     this.env[o.getClassName()].push(o);
 
@@ -307,6 +312,11 @@ class SimulationWorker extends SpatialHash {
 
   #envCalculations(object) {
     object.update?.(this.availableObjects[object.getClassName()]?.(object));
+    for (const flow of this.env.FlowControl)
+      if (flow.finished === true)
+        for (const f of flow.flow)
+          for (const near of this.findNear(f, 15 + this.settings.constants.max_radius))
+            f.flow(near);
   }
 
   /**

@@ -7,12 +7,14 @@ export class DOMHandler {
       temp: document.getElementById("temp"),
       stats: {
         particleCount: document.querySelector("#stats > #particleCount"),
+        objectCount: document.querySelector("#stats > #objectCount"),
       },
       sliders: {},
       toggles: {},
       dropdowns: {},
     };
     this.particleCount = 0;
+    this.objectCount = 0;
 
     this.#initDOMElements();
   }
@@ -135,67 +137,85 @@ export class DOMHandler {
   }
 
   #handleMouse() {
+    let m, mouseDown, mouseEvent, dx, dy, d;
+    const pre = [],
+      pre2 = [],
+      points = [];
+
     this.canvas.addEventListener("mousedown", (event) => {
       event.preventDefault();
 
-      if (this.mouseDown === true) return;
+      if (mouseDown === true) return;
 
-      const m = this.#getMousePos(event);
+      m = this.#getMousePos(event);
 
-      this.pre = [m[0], m[1]];
-      this.mouseDown = true;
+      pre[0] = m[0];
+      pre[1] = m[1];
+      mouseDown = true;
 
       switch (this.domElements.dropdowns.mouse_mode.value) {
         case "New Object":
-          this.event = "object";
-
-          const style = this.domElements.temp.style;
-
-          style.display = "block";
-          style.left = m[0] + "px";
-          style.top = m[1] + "px";
-
+          mouseEvent = "object";
+          if (this.domElements.dropdowns.object_type.value === "FlowControl") {
+            points.length = 0;
+            this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+            this.messageWorker({ flow: ["new", m] });
+          }
           break;
         default:
-          this.event = "particle";
+          mouseEvent = "particle";
           break;
       }
     });
 
     this.canvas.addEventListener("mousemove", (event) => {
-      if (!(this.mouseDown === true)) return;
+      if (!(mouseDown === true)) return;
 
-      const m = this.#getMousePos(event);
+      m = this.#getMousePos(event);
 
-      let dx = m[0] - this.pre[0],
-        dy = m[1] - this.pre[1];
+      dx = m[0] - pre[0];
+      dy = m[1] - pre[1];
 
-      switch (this.event) {
+      switch (mouseEvent) {
         case "object":
-          const style = this.domElements.temp.style;
+          switch (this.domElements.dropdowns.object_type.value) {
+            case "GravityWell":
+            case "Circle":
+              this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+              this.ctx.beginPath();
+              this.ctx.fillStyle = "#FFFFFFA0";
+              this.ctx.arc(pre[0], pre[1], Math.sqrt(dx ** 2 + dy ** 2), 0, Math.PI * 2);
+              this.ctx.fill();
+              this.ctx.closePath();
+              break;
+            case "FlowControl":
+              if ((pre2[0] - m[0]) ** 2 + (pre2[1] - m[1]) ** 2 < 100) break;
 
-          if (Math.abs(dx) > settings.constants.max_width)
-            dx = settings.constants.max_width;
-          if (Math.abs(dy) > settings.constants.max_height)
-            dy = settings.constants.max_height;
+              points.push({ x: m[0], y: m[1] });
+              this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+              this.ctx.drawCurve(points);
 
-          style.width = dx;
-          style.height = dy;
+              this.messageWorker({ flow: ["next", m] });
 
-          if (dx < 0) {
-            style.left = m[0];
-            style.width = Math.abs(dx);
-          }
+              pre2[0] = m[0];
+              pre2[1] = m[1];
+              break;
+            default:
+              if (Math.abs(dx) > settings.constants.max_width)
+                dx = settings.constants.max_width;
+              if (Math.abs(dy) > settings.constants.max_height)
+                dy = settings.constants.max_height;
 
-          if (dy < 0) {
-            style.top = m[1];
-            style.height = Math.abs(dy);
+              this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+              this.ctx.fillStyle = "#FFFFFFA0";
+              this.ctx.fillRect(pre[0], pre[1], dx, dy);
+              break;
           }
           break;
         case "particle":
           this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
           this.ctx.beginPath();
-          this.ctx.moveTo(this.pre[0], this.pre[1]);
+          this.ctx.moveTo(pre[0], pre[1]);
           this.ctx.lineTo(m[0], m[1]);
           this.ctx.stroke();
           this.ctx.closePath();
@@ -204,22 +224,22 @@ export class DOMHandler {
     });
 
     this.canvas.addEventListener("mouseup", (event) => {
-      if (!(this.mouseDown === true)) return;
+      if (!(mouseDown === true)) return;
 
-      const m = this.#getMousePos(event);
+      m = this.#getMousePos(event);
 
-      const dx = m[0] - this.pre[0],
-        dy = m[1] - this.pre[1];
+      dx = m[0] - pre[0];
+      dy = m[1] - pre[1];
 
-      switch (this.event) {
+      switch (mouseEvent) {
         case "object":
           switch (this.domElements.dropdowns.object_type.value) {
             case "GravityWell":
-              const d = Math.sqrt(dx ** 2 + dy ** 2);
+              d = Math.sqrt(dx ** 2 + dy ** 2);
               this.newObject(
                 {
-                  x: this.pre[0],
-                  y: this.pre[1],
+                  x: pre[0],
+                  y: pre[1],
                   r: d,
                   strength: d ** 1.5,
                 },
@@ -229,38 +249,32 @@ export class DOMHandler {
             case "Circle":
               this.newObject(
                 {
-                  x: this.pre[0],
-                  y: this.pre[1],
+                  x: pre[0],
+                  y: pre[1],
                   r: Math.sqrt(dx ** 2 + dy ** 2),
                 },
                 "Circle"
               );
               break;
+            case "FlowControl":
+              this.messageWorker({ flow: ["end", m] });
+              break;
             default:
-              this.newObject(
-                { x: this.pre[0], y: this.pre[1], w: dx, h: dy },
-                "Rectangle"
-              );
+              this.newObject({ x: pre[0], y: pre[1], w: dx, h: dy }, "Rectangle");
               break;
           }
-
-          const style = this.domElements.temp.style;
-
-          style.display = "none";
-          style.width = style.height = 0;
 
           break;
         case "particle":
           this.newParticle(
-            { x: this.pre[0], y: this.pre[1], vx: dx, vy: dy },
+            { x: pre[0], y: pre[1], vx: dx, vy: dy },
             this.domElements.dropdowns.particle_type.value
           );
-          this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
 
           break;
       }
-
-      this.mouseDown = false;
+      this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+      mouseDown = false;
     });
   }
 }

@@ -45,6 +45,11 @@ export class Particle {
     if (dSq <= (this.r + otherParticle.r) ** 2) {
       const d = Math.sqrt(dSq);
 
+      /* const angle = Math.atan2(dy, dx);
+
+      otherParticle.x = this.x - (this.r + otherParticle.r) * Math.cos(angle);
+      otherParticle.y = this.y - (this.r + otherParticle.r) * Math.sin(angle); */
+
       // Normalised vectors
       const nvx = dx / d,
         nvy = dy / d;
@@ -78,23 +83,21 @@ export class Particle {
     const cor = this.settings.toggles.coefficient_of_restitution
       ? this.settings.variables.coefficient_of_restitution
       : 1;
-    switch (true) {
-      case (diff = this.x - this.r) < 0:
-        this.x = this.r;
-        this.vx = Math.abs(this.vx) * cor + diff;
-        break;
-      case (diff = this.x + this.r) > width:
-        this.x = width - this.r;
-        this.vx = -Math.abs(this.vx) * cor - (width - diff);
-        break;
-      case (diff = this.y - this.r) < 0:
-        this.y = this.r;
-        this.vy = Math.abs(this.vy) * cor + diff;
-        break;
-      case (diff = this.y + this.r) > height:
-        this.y = height - this.r;
-        this.vy = -Math.abs(this.vy) * cor - (height - diff);
-        break;
+
+    if ((diff = this.x - this.r) < 0) {
+      this.x = this.r;
+      this.vx = Math.abs(this.vx) * cor + diff;
+    } else if ((diff = this.x + this.r) > width) {
+      this.x = width - this.r;
+      this.vx = -Math.abs(this.vx) * cor - (width - diff);
+    }
+
+    if ((diff = this.y - this.r) < 0) {
+      this.y = this.r;
+      this.vy = Math.abs(this.vy) * cor + diff;
+    } else if ((diff = this.y + this.r) > height) {
+      this.y = height - this.r;
+      this.vy = -Math.abs(this.vy) * cor - (height - diff);
     }
   }
 

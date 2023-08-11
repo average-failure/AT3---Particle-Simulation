@@ -5,7 +5,7 @@ function gravity(mode, p1, p2, settings) {
 
   let f =
     (p1.strength *
-      (mode < 0 ? 2.5 : 1) *
+      2.5 *
       settings.variables[mode < 0 ? "repulsion_strength" : "attraction_strength"]) /
     (dSq *
       Math.sqrt(
