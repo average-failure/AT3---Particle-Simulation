@@ -258,6 +258,7 @@ export class DOMHandler {
               break;
             case "FlowControl":
               this.messageWorker({ flow: ["end", m] });
+              this.domElements.stats.objectCount.textContent = ++this.objectCount;
               break;
             default:
               this.newObject({ x: pre[0], y: pre[1], w: dx, h: dy }, "Rectangle");

@@ -45,6 +45,8 @@ export const settings = {
     dt: 0.1,
     coefficient_of_restitution: 0.95,
     drag: 0.999,
+    flow_size: 10,
+    flow_strength: 5,
   },
   toggles: {
     gravity: true,

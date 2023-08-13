@@ -4,8 +4,9 @@ export class FlowControl extends Environment {
   constructor(settings, params) {
     super(null, settings);
 
-    this.flowStrength = params.flowStrength || 0.05;
-    this.flowDirection = params.flowDirection || 1;
+    this.flowStrength = settings.variables.flow_strength / 100 || 0.05;
+
+    this.size = settings.variables.flow_size || 10;
 
     this.flow = [];
 
@@ -21,17 +22,17 @@ export class FlowControl extends Environment {
   }
 
   startFlow({ x, y }) {
-    this.flow.push(new BeginFlow(this.flowStrength, x, y));
+    this.flow.push(new BeginFlow(this.flowStrength, this.size, x, y));
   }
 
   nextFlow(x, y) {
     const flow = this.flow.at(-1);
-    this.flow.push(new Flow(this.flowStrength, flow, x, y));
+    this.flow.push(new Flow(this.flowStrength, this.size, flow, x, y));
     flow.addFlow(this.flow.at(-1));
   }
 
   endFlow(x, y) {
-    this.flow.push(new CloseFlow(this.flowStrength, this.flow.at(-1), x, y));
+    this.flow.push(new CloseFlow(this.flowStrength, this.size, this.flow.at(-1), x, y));
     this.flow.at(-2).addFlow(this.flow.at(-1));
     for (const f of this.flow) f.calcRotation();
     this.finished = true;
@@ -41,11 +42,11 @@ export class FlowControl extends Environment {
 
   genArrow() {
     const path = new Path2D();
-    path.moveTo(-4, 0);
-    path.lineTo(4, 0);
-    path.lineTo(2, 2);
-    path.moveTo(4, 0);
-    path.lineTo(2, -2);
+    path.moveTo(-this.size * 0.4, 0);
+    path.lineTo(this.size * 0.4, 0);
+    path.lineTo(this.size * 0.2, this.size * 0.2);
+    path.moveTo(this.size * 0.4, 0);
+    path.lineTo(this.size * 0.2, -this.size * 0.2);
     this.arrow = path;
   }
 
@@ -55,7 +56,13 @@ export class FlowControl extends Environment {
       ctx.translate(f.x, f.y);
       ctx.rotate(f.rotation);
       ctx.fillStyle = "#6060FFa0";
-      ctx.fillRect(-10, -10, 20, 20);
+      ctx.fillRect(-this.size, -this.size, this.size * 2, this.size * 2);
+      ctx.restore();
+    }
+    for (const f of this.flow) {
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.rotate(f.rotation);
       ctx.stroke(this.arrow);
       ctx.restore();
     }
@@ -63,11 +70,12 @@ export class FlowControl extends Environment {
 }
 
 class FlowBase {
-  constructor(strength, x, y) {
+  constructor(strength, size, x, y) {
     this.x = x;
     this.y = y;
 
     this.strength = strength;
+    this.size = size;
   }
 
   calcRotation() {
@@ -76,8 +84,8 @@ class FlowBase {
 
   flow(p) {
     if (
-      Math.abs(p.x - (this.x + 10)) <= p.r + 10 &&
-      Math.abs(p.y - (this.y + 10)) <= p.r + 10
+      Math.abs(p.x - (this.x + this.size)) <= p.r + this.size &&
+      Math.abs(p.y - (this.y + this.size)) <= p.r + this.size
     ) {
       p.vx += this.dx * this.strength;
       p.vy += this.dy * this.strength;
@@ -86,8 +94,8 @@ class FlowBase {
 }
 
 class BeginFlow extends FlowBase {
-  constructor(strength, x, y) {
-    super(strength, x, y);
+  constructor(strength, size, x, y) {
+    super(strength, size, x, y);
   }
 
   static getClassName() {
@@ -110,8 +118,8 @@ class BeginFlow extends FlowBase {
 }
 
 class CloseFlow extends FlowBase {
-  constructor(strength, preFlow, x, y) {
-    super(strength, x, y);
+  constructor(strength, size, preFlow, x, y) {
+    super(strength, size, x, y);
 
     this.preFlow = preFlow;
   }
@@ -132,8 +140,8 @@ class CloseFlow extends FlowBase {
 }
 
 class Flow extends FlowBase {
-  constructor(strength, preFlow, x, y) {
-    super(strength, x, y);
+  constructor(strength, size, preFlow, x, y) {
+    super(strength, size, x, y);
 
     this.preFlow = preFlow;
   }

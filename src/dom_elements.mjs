@@ -45,6 +45,15 @@ export const sliders = {
         name: "Repulsion Strength",
       },
     },
+    {
+      flow_size: {
+        min: 5,
+        max: 50,
+        value: 10,
+        step: 1,
+        name: "Flow Size",
+      },
+    },
   ],
 };
 
