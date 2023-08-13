@@ -14,4 +14,8 @@ export class Environment {
   getClassName() {
     return Environment.getClassName();
   }
+
+  dispose() {
+    for (const prop of Object.keys(this)) delete this[prop];
+  }
 }

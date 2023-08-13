@@ -34,6 +34,7 @@ class SimulationWorker extends SpatialHash {
       "updateToggle",
       "newObject",
       "flow",
+      "onButton",
     ];
 
     this.availableParticles = {
@@ -110,8 +111,11 @@ class SimulationWorker extends SpatialHash {
    * @param {OffscreenCanvas} envCanvas The canvas to draw the background on
    */
   addCanvas([canvas, envCanvas]) {
-    this.renderer = new Renderer(canvas, this.settings);
-    this.envRenderer = new EnvironmentRenderer(envCanvas, this.settings);
+    this.renderer = new Renderer((this.canvas = canvas), this.settings);
+    this.envRenderer = new EnvironmentRenderer(
+      (this.envCanvas = envCanvas),
+      this.settings
+    );
   }
 
   /**
@@ -128,6 +132,14 @@ class SimulationWorker extends SpatialHash {
    */
   updateToggle([setting, value]) {
     this.settings.toggles[setting] = value;
+  }
+
+  onButton(event) {
+    switch (event) {
+      case "reset":
+        this.reset();
+        break;
+    }
   }
 
   flow([mode, [x, y]]) {
@@ -210,6 +222,7 @@ class SimulationWorker extends SpatialHash {
    */
   deleteParticle(particle) {
     this.removeClient(particle);
+    particle.dispose();
     const index = this.particles.indexOf(particle);
     if (index > -1) this.particles.splice(index, 1);
   }
@@ -279,6 +292,22 @@ class SimulationWorker extends SpatialHash {
   //     });
   // }
   // TODO: handle mouse collision by dragging around a solid object (maybe)
+
+  reset() {
+    while (this.particles.length > 0) this.deleteParticle(this.particles[0]);
+    for (const key of Object.keys(this.env)) {
+      for (const env of this.env[key]) env.dispose();
+      this.env[key].length = 0;
+    }
+
+    this.pIds = this.oIds = -1;
+
+    this.renderer.dispose();
+    this.envRenderer.dispose();
+
+    this.addCanvas([this.canvas, this.envCanvas]);
+    this.resizeCanvas([this.width, this.height]);
+  }
 
   /**
    * Handles the calculations of a given particle

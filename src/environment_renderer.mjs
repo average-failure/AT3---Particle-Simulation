@@ -164,4 +164,9 @@ export class EnvironmentRenderer {
 
     this.objects = objects;
   }
+
+  dispose() {
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    for (const prop of Object.keys(this)) delete this[prop];
+  }
 }

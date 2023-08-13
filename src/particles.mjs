@@ -1,5 +1,5 @@
 import { attract, repulse } from "./gravity_calculations.mjs";
-import { randRange, randRangeInt } from "./utils.mjs";
+import { randRangeInt } from "./utils.mjs";
 
 export class Particle {
   /**
@@ -131,6 +131,10 @@ export class Particle {
   update(width, height) {
     this.updateCalculations(width, height);
     this.updatePosition();
+  }
+
+  dispose() {
+    for (const prop of Object.keys(this)) delete this[prop];
   }
 }
 

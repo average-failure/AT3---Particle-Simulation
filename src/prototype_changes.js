@@ -6,6 +6,8 @@ if (CanvasRenderingContext2D != undefined) {
 
     const t = Number.isFinite(tension) ? tension : 1;
 
+    const segments = [];
+
     for (let i = 0, len = points.length; i < len - 1; i++) {
       const p0 = i > 0 ? points[i - 1] : points[0];
       const p1 = points[i];
@@ -19,8 +21,12 @@ if (CanvasRenderingContext2D != undefined) {
       const cp2y = p2.y - ((p3.y - p1.y) / 6) * t;
 
       p.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+
+      segments.push([p0, { x: cp1x, y: cp1y }, { x: cp2x, y: cp2y }, p2]);
     }
 
     this.stroke(p);
+
+    return { p, segments };
   };
 }

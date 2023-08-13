@@ -85,3 +85,15 @@ export const dropdowns = {
     value: "Rectangle",
   },
 };
+
+export const buttons = {
+  reset: {
+    content: "Reset Simulation",
+    callback: function () {
+      for (const element of ["particleCount", "objectCount"]) {
+        this[element] = 0;
+        this.domElements.stats[element].textContent = 0;
+      }
+    },
+  },
+};

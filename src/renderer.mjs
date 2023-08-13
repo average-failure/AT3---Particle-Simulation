@@ -97,4 +97,8 @@ export class Renderer {
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.drawCanvas, 0, 0);
   }
+
+  dispose() {
+    for (const prop of Object.keys(this)) delete this[prop];
+  }
 }

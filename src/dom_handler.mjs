@@ -1,10 +1,9 @@
-import { createCheckbox, createSelect, createSlider } from "./utils.mjs";
+import { createCheckbox, createSelect, createSlider, createButton } from "./utils.mjs";
 import { settings } from "./settings.mjs";
 
 export class DOMHandler {
   constructor() {
     this.domElements = {
-      temp: document.getElementById("temp"),
       stats: {
         particleCount: document.querySelector("#stats > #particleCount"),
         objectCount: document.querySelector("#stats > #objectCount"),
@@ -12,6 +11,7 @@ export class DOMHandler {
       sliders: {},
       toggles: {},
       dropdowns: {},
+      buttons: {},
     };
     this.particleCount = 0;
     this.objectCount = 0;
@@ -29,6 +29,7 @@ export class DOMHandler {
     await this.#initSliders();
     this.#initToggles();
     this.#initDropdowns();
+    this.#initButtons();
   }
 
   #initSliders() {
@@ -86,6 +87,22 @@ export class DOMHandler {
         options,
         setting
       );
+    }
+  }
+
+  async #initButtons() {
+    const { buttons } = await import("./dom_elements.mjs");
+
+    for (const [event, options] of Object.entries(buttons)) {
+      const button = createButton(".settings > #buttons", options, event);
+
+      button.addEventListener("click", () => {
+        this.messageWorker({ onButton: event });
+      });
+
+      if (options.callback) button.addEventListener("click", options.callback.bind(this));
+
+      this.domElements.buttons[event] = button;
     }
   }
 

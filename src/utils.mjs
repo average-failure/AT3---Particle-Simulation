@@ -202,8 +202,9 @@ export const createSlider = (parentSelector, options, id) => {
       max = 1,
       value = (min + max) / 2,
       step = 0.1,
-      name,
+      name = "",
       onChange,
+      optionals = "",
     } = options,
     parentElement = document.querySelector(parentSelector);
 
@@ -214,13 +215,13 @@ export const createSlider = (parentSelector, options, id) => {
   if (id)
     container.innerHTML = `
       <label for="${id}Slider" class="sliderLabel">${name}</label>
-      <input id="${id}Slider" class="slider" type="range" min="${min}" max="${max}" value="${value}" step="${step}" />
+      <input id="${id}Slider" class="slider" type="range" min="${min}" max="${max}" value="${value}" step="${step}" ${optionals} />
       <div class="sliderValue">${value}</div>
     `;
   else
     container.innerHTML = `
       <div class="sliderLabel">${name}</div>
-      <input class="slider" type="range" min="${min}" max="${max}" value="${value}" step="${step}" />
+      <input class="slider" type="range" min="${min}" max="${max}" value="${value}" step="${step}" ${optionals} />
       <div class="sliderValue">${value}</div>
     `;
   parentElement.appendChild(container);
@@ -245,7 +246,7 @@ export const createSlider = (parentSelector, options, id) => {
  * @returns The checkbox element
  */
 export const createCheckbox = (parentSelector, options, id) => {
-  const { value, name } = options,
+  const { value = "", name = "", optionals = "" } = options,
     parentElement = document.querySelector(parentSelector);
 
   const container = document.createElement("div");
@@ -255,12 +256,12 @@ export const createCheckbox = (parentSelector, options, id) => {
   if (id)
     container.innerHTML = `
       <label for="${id}Checkbox" class="checkboxLabel">${name}</label>
-      <input id="${id}Checkbox" class="checkbox" type="checkbox" ${value} />
+      <input id="${id}Checkbox" class="checkbox" type="checkbox" ${value} ${optionals} />
     `;
   else
     container.innerHTML = `
       <div class="checkboxLabel">${name}</div>
-      <input class="checkbox" type="checkbox" ${value} />
+      <input class="checkbox" type="checkbox" ${value} ${optionals} />
     `;
   parentElement.appendChild(container);
 
@@ -268,14 +269,14 @@ export const createCheckbox = (parentSelector, options, id) => {
 };
 
 /**
- * Creates an input element of type select as a child of the given parent
+ * Creates a select element as a child of the given parent
  * @param {String} parentSelector A string containing a css selector for the parent element
  * @param {Object} options An object containing options for the dropdown
  * @param {String} id The id of the select element
  * @returns The select element
  */
 export const createSelect = (parentSelector, options, id) => {
-  const { value, name, children } = options,
+  const { value, name = "", children = [], optionals = "" } = options,
     parentElement = document.querySelector(parentSelector);
 
   const container = document.createElement("div");
@@ -285,21 +286,52 @@ export const createSelect = (parentSelector, options, id) => {
   if (id)
     container.innerHTML = `
       <label for="${id}Select" class="selectLabel">${name}</label>
-      <select id="${id}Select" class="select"></select>
+      <select id="${id}Select" class="select" ${optionals}></select>
     `;
   else
     container.innerHTML = `
       <div class="selectLabel">${name}</div>
-      <select class="select"></select>
+      <select class="select" ${optionals}></select>
     `;
 
   const element = container.querySelector(id ? `#${id}Select` : ".select");
 
-  for (const child of children || []) element.options.add(new Option(child));
+  for (const child of children) element.options.add(new Option(child));
 
   if (value) element.value = value;
 
   parentElement.appendChild(container);
 
   return element;
+};
+
+/**
+ * Creates a button as a child of the given parent
+ * @param {String} parentSelector A string containing a css selector for the parent element
+ * @param {Object} options An object containing options for the dropdown
+ * @param {String} id The id of the button element
+ * @returns The button element
+ */
+export const createButton = (parentSelector, options, id) => {
+  const { optionals = "", name = "", content = "" } = options,
+    parentElement = document.querySelector(parentSelector);
+
+  const container = document.createElement("div");
+  container.classList.add("buttonContainer");
+  container.classList.add("container");
+
+  if (id)
+    container.innerHTML = `
+      <label for="${id}Button" class="buttonLabel">${name}</label>
+      <button id="${id}Button" class="button" ${optionals}>${content}</button>
+    `;
+  else
+    container.innerHTML = `
+      <div class="selectLabel">${name}</div>
+      <button class="button" ${optionals}>${content}</button>
+    `;
+
+  parentElement.appendChild(container);
+
+  return container.querySelector(id ? `#${id}Button` : ".button");
 };
