@@ -312,11 +312,16 @@ class SimulationWorker extends SpatialHash {
 
   #envCalculations(object) {
     object.update?.(this.availableObjects[object.getClassName()]?.(object));
-    for (const flow of this.env.FlowControl)
-      if (flow.finished === true)
-        for (const f of flow.flow)
-          for (const near of this.findNear(f, 15 + this.settings.constants.max_radius))
+    for (const flow of this.env.FlowControl) {
+      if (flow.finished === true) {
+        const size = Math.sqrt(2 * flow.size ** 2) + this.settings.constants.max_radius;
+        for (const f of flow.flow) {
+          for (const near of this.findNear(f, size)) {
             f.flow(near);
+          }
+        }
+      }
+    }
   }
 
   /**

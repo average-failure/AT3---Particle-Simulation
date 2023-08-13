@@ -56,7 +56,7 @@ export class FlowControl extends Environment {
       ctx.translate(f.x, f.y);
       ctx.rotate(f.rotation);
       ctx.fillStyle = "#6060FFa0";
-      ctx.fillRect(-this.size, -this.size, this.size * 2, this.size * 2);
+      ctx.fillRect(-f.size, -f.size, f.dSize, f.dSize);
       ctx.restore();
     }
     for (const f of this.flow) {
@@ -74,8 +74,12 @@ class FlowBase {
     this.x = x;
     this.y = y;
 
+    this.tx = x - size;
+    this.ty = y - size;
+
     this.strength = strength;
     this.size = size;
+    this.dSize = size * 2;
   }
 
   calcRotation() {
@@ -83,10 +87,28 @@ class FlowBase {
   }
 
   flow(p) {
-    if (
-      Math.abs(p.x - (this.x + this.size)) <= p.r + this.size &&
-      Math.abs(p.y - (this.y + this.size)) <= p.r + this.size
-    ) {
+    const upx =
+      Math.cos(this.rotation) * (p.x - this.x) -
+      Math.sin(this.rotation) * (p.y - this.y) +
+      this.x;
+    const upy =
+      Math.sin(this.rotation) * (p.x - this.x) +
+      Math.cos(this.rotation) * (p.y - this.y) +
+      this.y;
+
+    let cx, cy;
+
+    if (upx < this.tx) cx = this.tx;
+    else if (upx > this.tx + this.dSize) cx = this.tx + this.dSize;
+    else cx = upx;
+
+    if (upy < this.ty) cy = this.ty;
+    else if (upy > this.ty + this.dSize) cy = this.ty + this.dSize;
+    else cy = upy;
+
+    const dSq = (upx - cx) ** 2 + (upy - cy) ** 2;
+
+    if (dSq < p.r ** 2) {
       p.vx += this.dx * this.strength;
       p.vy += this.dy * this.strength;
     }
