@@ -334,6 +334,12 @@ class SimulationWorker extends SpatialHash {
       particle.detectCollision(near);
     // console.timeEnd("collision");
 
+    // for (const near of this.findNear(
+    //   particle,
+    //   Math.sqrt(particle.vx ** 2 + particle.vy ** 2)
+    // ))
+    //   particle.projectCollision(near);
+
     // console.time("new");
     this.newClient(particle);
     // console.timeEnd("new");

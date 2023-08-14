@@ -9,6 +9,11 @@ export class Vector2 {
     this.y = v.y;
   }
 
+  set(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
   add(v) {
     this.x += v.x;
     this.y += v.y;
@@ -96,6 +101,7 @@ export class Vector2 {
     const len = this.length;
     if (len === 0) throw "Error: Origin vector cannot be normalised.";
     this.divideScalar(len);
+    return this;
   }
 
   dot(v) {
@@ -124,5 +130,13 @@ export class Vector2 {
 
   distanceBetween(v) {
     return Math.sqrt(this.distanceBetweenSq(v));
+  }
+
+  getNormal() {
+    return new Vector2(-this.y, this.x);
+  }
+
+  projectOn(axis) {
+    return this.dot(axis.normalise());
   }
 }

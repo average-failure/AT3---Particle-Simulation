@@ -1,6 +1,17 @@
 import { attract, repulse } from "./gravity_calculations.mjs";
 import { randRangeInt } from "./utils.mjs";
+import { Vector2 } from "./vectors.mjs";
 
+function intersects(a, b, c, d, p, q, r, s) {
+  let γ,
+    λ,
+    𝐴 = (c - a) * (s - q) - (r - p) * (d - b);
+  return (
+    0 !== 𝐴 &&
+    ((γ = ((b - d) * (r - a) + (c - a) * (s - b)) / 𝐴),
+    0 < (λ = ((s - q) * (r - a) + (p - r) * (s - b)) / 𝐴) && λ < 1 && 0 < γ && γ < 1)
+  );
+}
 export class Particle {
   /**
    * A particle...
@@ -26,6 +37,9 @@ export class Particle {
       this.r = this.settings.constants.max_radius;
     else if (this.r < this.settings.constants.min_radius)
       this.r = this.settings.constants.min_radius;
+
+    this.projection = new Vector2();
+    this.line = new Vector2();
   }
 
   static getClassName() {
@@ -36,6 +50,108 @@ export class Particle {
     return Particle.getClassName();
   }
 
+  /* pointParticle(p, px, py) {
+    return (p.x - px) ** 2 + (p.y - py) ** 2 <= p.r ** 2;
+  }
+
+  linePoint(l1x, l1y, l2x, l2y, px, py, buffer = 0.1) {
+    const d = (px - l1x) ** 2 + (py - l1y) ** 2 + ((px - l2x) ** 2 + (py - l2y) ** 2);
+    const len = (l1x - l2x) ** 2 + (l1y - l2y) ** 2;
+    return d >= len - buffer ** 2 && d <= len + buffer ** 2;
+  }
+
+  lineParticle(p, l1x, l1y, l2x, l2y) {
+    if (this.pointParticle(p, l1x, l1y) || this.pointParticle(p, l2x, l2y)) return true;
+
+    const len = (l1x - l2x) ** 2 + (l1y - l2y) ** 2;
+
+    const dot = ((p.x - l1x) * (l2x - l1x) + (p.y - l1y) * (l2y - l1y)) / len;
+
+    const cx = l1x + dot * (l2x - l1x),
+      cy = l1y + dot * (l2y - l1y);
+
+    if (!this.linePoint(l1x, l1y, l2x, l2y, cx, cy)) return false;
+
+    return (cx - p.x) ** 2 + (cy - p.y) ** 2 <= p.r ** 2;
+  } */
+
+  /* sweptAABB(p) {
+    const rvx = p.vx - this.vx,
+      rvy = p.vy - this.vy;
+
+    const dx = p.x - this.x,
+      dy = p.y - this.y;
+
+    const timeToCollision = (dx * rvx + dy * rvy) / (rvx ** 2 + rvy ** 2);
+
+    if (timeToCollision < 0 || timeToCollision > 1) return false;
+
+    const cx = this.x + this.vx * timeToCollision,
+      cy = this.y + this.vy * timeToCollision;
+
+    const dSq = (dx - rvx * timeToCollision) ** 2 + (dy - rvy * timeToCollision) ** 2;
+
+    const colliding = dSq <= (this.r + p.r) ** 2;
+
+    return { colliding, cx, cy };
+  } */
+
+  /* fastCollision(p) {
+    const rvx = p.vx - this.vx,
+      rvy = p.vy - this.vy;
+
+    const rd = Math.sqrt(rvx ** 2 + rvy ** 2);
+
+    const rSum = this.r + p.r;
+
+    const minDist = rSum * 0.1;
+
+    if (rd < minDist) {
+      const penDepth = minDist - rd;
+
+      const pdx = rvx / rd,
+        pdy = rvy / rd;
+
+      this.x -= pdx * penDepth * 0.5;
+      this.x -= pdy * penDepth * 0.5;
+      p.x += pdx * penDepth * 0.5;
+      p.x += pdy * penDepth * 0.5;
+    }
+  } */
+
+  // projectCollision(p) {
+  //   /* this.projection.set(p.x - this.x, p.y - this.y);
+  //   this.line.set(this.vx, this.vy);
+  //   const normal = this.line.getNormal();
+  //   const projectionOnNormal = this.projection.projectOn(normal);
+  //   console.log(projectionOnNormal);
+  //   if (Math.abs(projectionOnNormal) <= p.r) {
+  //     this.collide(p, {
+  //       dx: this.line.x,
+  //       dy: this.line.y,
+  //       d: projectionOnNormal,
+  //     });
+  //   }
+  //   // ! projection not working */
+
+  //   // this.fastCollision(p);
+
+  //   /* const { colliding, cx, cy } = this.sweptAABB(p) || {};
+
+  //   if (colliding) {
+  //     console.log("colliding");
+  //     this.x = cx;
+  //     this.y = cy;
+  //   } */
+
+  //   /* if (this.lineParticle(p, this.x, this.y, this.x - this.vx, this.y - this.vy)) {
+  //     const dx = this.x - p.x,
+  //       dy = this.y - p.y;
+  //     const dSq = dx ** 2 + dy ** 2;
+  //     this.collide(p, { dx, dy, dSq });
+  //   } */
+  // }
+
   detectCollision(otherParticle) {
     // Find distance between particles
     const dx = this.x - otherParticle.x,
@@ -43,39 +159,43 @@ export class Particle {
     const dSq = dx ** 2 + dy ** 2;
 
     if (dSq <= (this.r + otherParticle.r) ** 2) {
-      const d = Math.sqrt(dSq);
+      this.collide(otherParticle, { dx, dy, dSq });
+    }
+  }
 
-      /* const angle = Math.atan2(dy, dx);
+  collide(otherParticle, { dx, dy, dSq, d }) {
+    const dist = Number.isFinite(d) ? d : Math.sqrt(dSq);
+
+    /* const angle = Math.atan2(dy, dx);
 
       otherParticle.x = this.x - (this.r + otherParticle.r) * Math.cos(angle);
       otherParticle.y = this.y - (this.r + otherParticle.r) * Math.sin(angle); */
 
-      // Normalised vectors
-      const nvx = dx / d,
-        nvy = dy / d;
+    // Normalised vectors
+    const nvx = Number.isFinite(dx / dist) ? dx / dist : 0,
+      nvy = Number.isFinite(dy / dist) ? dy / dist : 0;
 
-      // Relative vectors
-      const rvx = otherParticle.vx - this.vx,
-        rvy = otherParticle.vy - this.vy;
+    // Relative vectors
+    const rvx = otherParticle.vx - this.vx,
+      rvy = otherParticle.vy - this.vy;
 
-      // Calculate the dot product of normalised and relative vectors
-      const speed =
-        (rvx * nvx + rvy * nvy) *
-        (this.settings.toggles.coefficient_of_restitution
-          ? this.settings.variables.coefficient_of_restitution
-          : 1);
+    // Calculate the dot product of normalised and relative vectors
+    const speed =
+      (rvx * nvx + rvy * nvy) *
+      (this.settings.toggles.coefficient_of_restitution
+        ? this.settings.variables.coefficient_of_restitution
+        : 1);
 
-      if (speed < 0) return;
+    if (speed < 0) return;
 
-      // Calculate the impulse of the collision
-      const impulse = (2 * speed) / (this.mass + otherParticle.mass);
+    // Calculate the impulse of the collision
+    const impulse = (2 * speed) / (this.mass + otherParticle.mass);
 
-      // Calculate the velocity based on the impulse
-      this.vx += impulse * otherParticle.mass * nvx;
-      this.vy += impulse * otherParticle.mass * nvy;
-      otherParticle.vx -= impulse * this.mass * nvx;
-      otherParticle.vy -= impulse * this.mass * nvy;
-    }
+    // Calculate the velocity based on the impulse
+    this.vx += impulse * otherParticle.mass * nvx;
+    this.vy += impulse * otherParticle.mass * nvy;
+    otherParticle.vx -= impulse * this.mass * nvx;
+    otherParticle.vy -= impulse * this.mass * nvy;
   }
 
   #checkBoundaries(width, height) {
