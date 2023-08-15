@@ -2,16 +2,6 @@ import { attract, repulse } from "./gravity_calculations.mjs";
 import { randRangeInt } from "./utils.mjs";
 import { Vector2 } from "./vectors.mjs";
 
-function intersects(a, b, c, d, p, q, r, s) {
-  let γ,
-    λ,
-    𝐴 = (c - a) * (s - q) - (r - p) * (d - b);
-  return (
-    0 !== 𝐴 &&
-    ((γ = ((b - d) * (r - a) + (c - a) * (s - b)) / 𝐴),
-    0 < (λ = ((s - q) * (r - a) + (p - r) * (s - b)) / 𝐴) && λ < 1 && 0 < γ && γ < 1)
-  );
-}
 export class Particle {
   /**
    * A particle...
@@ -21,7 +11,7 @@ export class Particle {
    */
   constructor(id, settings, { x, y, vx, vy, mass }) {
     if (!Number.isInteger(id)) throw "Error: Id not provided.";
-    if (!(Number.isInteger(x) && Number.isInteger(y)))
+    if (!(Number.isFinite(x) && Number.isFinite(y)))
       throw "Error: Position not provided.";
     if (!settings) throw "Error: Settings not provided.";
     this.id = id;

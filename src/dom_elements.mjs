@@ -72,11 +72,11 @@ export const toggles = {
 export const dropdowns = {
   mouse_mode: {
     name: "Mouse Mode",
-    children: ["New Particle", "New Object"],
+    children: ["New Particle", "New Object", "Multi Particle"],
   },
   particle_type: {
     name: "Particle Type",
-    children: Object.keys(PARTICLES),
+    children: ["Random", ...Object.keys(PARTICLES)],
     value: "Particle",
   },
   object_type: {

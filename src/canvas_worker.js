@@ -165,10 +165,9 @@ class SimulationWorker extends SpatialHash {
    * @returns A new instance of the selected particle type
    */
   #createParticleInstance(type, settings, params) {
-    const SelectedClass = PARTICLES[type] || PARTICLES.Particle;
-    // Object.values(PARTICLES)[
-    //   ~~(Math.random() * Object.keys(PARTICLES).length)
-    // ];
+    const SelectedClass =
+      PARTICLES[type] ||
+      Object.values(PARTICLES)[~~(Math.random() * Object.keys(PARTICLES).length)];
 
     return new SelectedClass(++this.pIds, settings, params);
   }
@@ -314,25 +313,19 @@ class SimulationWorker extends SpatialHash {
    * @param {Particle} particle The particle to do the calculations for
    */
   #calculations(particle) {
-    // console.time("remove");
     this.removeClient(particle);
-    // console.timeEnd("remove");
 
-    // console.time("update");
     particle.update(
       this.width,
       this.height,
       this.availableParticles[particle.getClassName()]?.(particle)
     );
-    // console.timeEnd("update");
 
-    // console.time("collision");
     for (const near of this.findNear(
       particle,
       particle.r + this.settings.constants.max_radius
     ))
       particle.detectCollision(near);
-    // console.timeEnd("collision");
 
     // for (const near of this.findNear(
     //   particle,
@@ -340,9 +333,7 @@ class SimulationWorker extends SpatialHash {
     // ))
     //   particle.projectCollision(near);
 
-    // console.time("new");
     this.newClient(particle);
-    // console.timeEnd("new");
   }
 
   #envCalculations(object) {

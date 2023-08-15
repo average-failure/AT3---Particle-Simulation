@@ -154,10 +154,12 @@ export class DOMHandler {
   }
 
   #handleMouse() {
-    let m, mouseDown, mouseEvent, dx, dy, d;
+    let m, mouseDown, mouseEvent, dx, dy, d, interval;
     const pre = [],
       pre2 = [],
-      points = [];
+      points = [],
+      c = [];
+    const multiRadius = 80;
 
     this.canvas.addEventListener("mousedown", (event) => {
       event.preventDefault();
@@ -171,6 +173,9 @@ export class DOMHandler {
       mouseDown = true;
 
       switch (this.domElements.dropdowns.mouse_mode.value) {
+        case "New Particle":
+          mouseEvent = "particle";
+          break;
         case "New Object":
           mouseEvent = "object";
           if (this.domElements.dropdowns.object_type.value === "FlowControl") {
@@ -179,8 +184,25 @@ export class DOMHandler {
             this.messageWorker({ flow: ["new", m] });
           }
           break;
+        case "Multi Particle":
+          c[0] = m[0];
+          c[1] = m[1];
+          mouseEvent = "multi";
+          interval = setInterval(() => {
+            const angle = Math.random() * 2 * Math.PI,
+              hyp =
+                Math.sqrt(Math.random()) * (multiRadius - settings.constants.max_radius);
+            this.newParticle(
+              { x: c[0] + Math.cos(angle) * hyp, y: c[1] + Math.sin(angle) * hyp },
+              this.domElements.dropdowns.particle_type.value
+            );
+          }, 50);
+          this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+          this.ctx.beginPath();
+          this.ctx.arc(c[0], c[1], multiRadius, 0, Math.PI * 2);
+          this.ctx.stroke();
+          break;
         default:
-          mouseEvent = "particle";
           break;
       }
     });
@@ -193,9 +215,30 @@ export class DOMHandler {
       dx = m[0] - pre[0];
       dy = m[1] - pre[1];
 
+      c[0] = m[0];
+      c[1] = m[1];
+
       switch (mouseEvent) {
+        case "particle":
+          this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+          this.ctx.beginPath();
+          this.ctx.moveTo(pre[0], pre[1]);
+          this.ctx.lineTo(m[0], m[1]);
+          this.ctx.stroke();
+          this.ctx.closePath();
+          break;
         case "object":
           switch (this.domElements.dropdowns.object_type.value) {
+            case "Rectangle":
+              if (Math.abs(dx) > settings.constants.max_width)
+                dx = settings.constants.max_width;
+              if (Math.abs(dy) > settings.constants.max_height)
+                dy = settings.constants.max_height;
+
+              this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+              this.ctx.fillStyle = "#FFFFFFA0";
+              this.ctx.fillRect(pre[0], pre[1], dx, dy);
+              break;
             case "GravityWell":
             case "Circle":
               this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
@@ -218,24 +261,16 @@ export class DOMHandler {
               pre2[1] = m[1];
               break;
             default:
-              if (Math.abs(dx) > settings.constants.max_width)
-                dx = settings.constants.max_width;
-              if (Math.abs(dy) > settings.constants.max_height)
-                dy = settings.constants.max_height;
-
-              this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
-              this.ctx.fillStyle = "#FFFFFFA0";
-              this.ctx.fillRect(pre[0], pre[1], dx, dy);
               break;
           }
           break;
-        case "particle":
+        case "multi":
           this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
           this.ctx.beginPath();
-          this.ctx.moveTo(pre[0], pre[1]);
-          this.ctx.lineTo(m[0], m[1]);
+          this.ctx.arc(c[0], c[1], multiRadius, 0, Math.PI * 2);
           this.ctx.stroke();
-          this.ctx.closePath();
+          break;
+        default:
           break;
       }
     });
@@ -248,9 +283,14 @@ export class DOMHandler {
       dx = m[0] - pre[0];
       dy = m[1] - pre[1];
 
+      clearInterval(interval);
+
       switch (mouseEvent) {
         case "object":
           switch (this.domElements.dropdowns.object_type.value) {
+            case "Rectangle":
+              this.newObject({ x: pre[0], y: pre[1], w: dx, h: dy }, "Rectangle");
+              break;
             case "GravityWell":
               d = Math.sqrt(dx ** 2 + dy ** 2);
               this.newObject(
@@ -278,17 +318,19 @@ export class DOMHandler {
               this.domElements.stats.objectCount.textContent = ++this.objectCount;
               break;
             default:
-              this.newObject({ x: pre[0], y: pre[1], w: dx, h: dy }, "Rectangle");
               break;
           }
 
           break;
+
         case "particle":
           this.newParticle(
             { x: pre[0], y: pre[1], vx: dx, vy: dy },
             this.domElements.dropdowns.particle_type.value
           );
 
+          break;
+        default:
           break;
       }
       this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
