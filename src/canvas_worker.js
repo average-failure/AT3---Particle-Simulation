@@ -40,21 +40,21 @@ class SimulationWorker extends SpatialHash {
     this.availableParticles = {
       Particle: null,
       AttractorParticle: (particle) => [
-        this.findNear(
+        this.findNearParticles(
           particle,
           this.settings.constants.max_radius +
             particle.strength * this.settings.variables.attraction_radius
         ),
       ],
       RepulserParticle: (particle) => [
-        this.findNear(
+        this.findNearParticles(
           particle,
           this.settings.constants.max_radius +
             particle.strength * this.settings.variables.repulsion_radius
         ),
       ],
       ChargedParticle: (particle) => [
-        this.findNear(
+        this.findNearParticles(
           particle,
           this.settings.constants.max_radius +
             particle.strength *
@@ -67,19 +67,19 @@ class SimulationWorker extends SpatialHash {
 
     this.availableObjects = {
       Rectangle: (object) => [
-        this.findNear(
+        this.findNearParticles(
           { x: object.x + object.w / 2, y: object.y + object.h / 2 },
           Math.sqrt(object.measurements[0] ** 2 + object.measurements[1] ** 2) +
             this.settings.constants.max_radius
         ),
       ],
       Circle: (object) => [
-        this.findNear(
+        this.findNearParticles(
           { x: object.x, y: object.y },
           object.r + this.settings.constants.max_radius
         ),
       ],
-      GravityWell: (object) => [this.findNear(object, object.r)],
+      GravityWell: (object) => [this.findNearParticles(object, object.r)],
     };
   }
 
@@ -100,7 +100,7 @@ class SimulationWorker extends SpatialHash {
    */
   resizeCanvas([width, height]) {
     this.renderer.resizeCanvas(width, height);
-    this.envRenderer.resizeCanvas(width, height);
+    this.envRenderer.resizeCanvas(width, height, this.env);
     this.width = width;
     this.height = height;
   }
@@ -210,9 +210,6 @@ class SimulationWorker extends SpatialHash {
 
     this.newClient(p);
     this.particles.push(p);
-
-    this.renderer.resizeBuffers(this.particles);
-    this.renderer.updateRadiusBuffer(p);
   }
 
   /**
@@ -238,6 +235,7 @@ class SimulationWorker extends SpatialHash {
     // Object.values(OBJECTS)[
     //   ~~(Math.random() * Object.keys(OBJECTS).length)
     // ];
+    if (type === "GravityWell") params.ctx = this.envRenderer.drawCtx;
 
     return new SelectedClass(++this.oIds, settings, params);
   }
@@ -268,9 +266,18 @@ class SimulationWorker extends SpatialHash {
         ? object
         : this.#createObjectInstance(type, this.settings, d);
 
+    this.newClient(o);
     this.env[o.getClassName()].push(o);
 
     this.envRenderer.render(this.env);
+  }
+
+  findNearParticles(p, r) {
+    return this.findNear(p, r).filter((n) => n instanceof PARTICLES.Particle);
+  }
+
+  findNearObjects(p, r) {
+    return this.findNear(p, r).filter((n) => n instanceof Environment);
   }
 
   // /**
@@ -278,7 +285,7 @@ class SimulationWorker extends SpatialHash {
   //  * @param {Object} param0 An object containing mouse x and y coordinates
   //  */
   // mouseCollision({ mx: x, my: y }) {
-  //   for (const near of this.findNear(
+  //   for (const near of this.findNearParticles(
   //     { x, y },
   //     this.settings.variables.mouse_collision_radius +
   //       this.settings.constants.max_radius
@@ -321,13 +328,13 @@ class SimulationWorker extends SpatialHash {
       this.availableParticles[particle.getClassName()]?.(particle)
     );
 
-    for (const near of this.findNear(
+    for (const near of this.findNearParticles(
       particle,
       particle.r + this.settings.constants.max_radius
     ))
       particle.detectCollision(near);
 
-    // for (const near of this.findNear(
+    // for (const near of this.findNearParticles(
     //   particle,
     //   Math.sqrt(particle.vx ** 2 + particle.vy ** 2)
     // ))
@@ -342,7 +349,7 @@ class SimulationWorker extends SpatialHash {
       if (flow.finished === true) {
         const size = Math.sqrt(2 * flow.size ** 2) + this.settings.constants.max_radius;
         for (const f of flow.flow) {
-          for (const near of this.findNear(f, size)) {
+          for (const near of this.findNearParticles(f, size)) {
             f.flow(near);
           }
         }

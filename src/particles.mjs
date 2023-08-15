@@ -28,8 +28,7 @@ export class Particle {
     else if (this.r < this.settings.constants.min_radius)
       this.r = this.settings.constants.min_radius;
 
-    this.projection = new Vector2();
-    this.line = new Vector2();
+    (this.path = new Path2D()).arc(0, 0, this.r, 0, Math.PI * 2);
   }
 
   static getClassName() {

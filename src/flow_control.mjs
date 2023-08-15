@@ -51,20 +51,16 @@ export class FlowControl extends Environment {
   }
 
   render(ctx) {
+    ctx.fillStyle = "#60FFFF80";
     for (const f of this.flow) {
-      ctx.save();
-      ctx.translate(f.x, f.y);
+      ctx.setTransform(1, 0, 0, 1, f.x, f.y);
       ctx.rotate(f.rotation);
-      ctx.fillStyle = "#6060FFa0";
       ctx.fillRect(-f.size, -f.size, f.dSize, f.dSize);
-      ctx.restore();
     }
     for (const f of this.flow) {
-      ctx.save();
-      ctx.translate(f.x, f.y);
+      ctx.setTransform(1, 0, 0, 1, f.x, f.y);
       ctx.rotate(f.rotation);
       ctx.stroke(this.arrow);
-      ctx.restore();
     }
   }
 }
@@ -84,17 +80,13 @@ class FlowBase {
 
   calcRotation() {
     this.rotation = Math.atan2(this.dy, this.dx);
+    this.cos = Math.cos(this.rotation);
+    this.sin = Math.sin(this.rotation);
   }
 
   flow(p) {
-    const upx =
-      Math.cos(this.rotation) * (p.x - this.x) -
-      Math.sin(this.rotation) * (p.y - this.y) +
-      this.x;
-    const upy =
-      Math.sin(this.rotation) * (p.x - this.x) +
-      Math.cos(this.rotation) * (p.y - this.y) +
-      this.y;
+    const upx = this.cos * (p.x - this.x) - this.sin * (p.y - this.y) + this.x;
+    const upy = this.sin * (p.x - this.x) + this.cos * (p.y - this.y) + this.y;
 
     let cx, cy;
 
