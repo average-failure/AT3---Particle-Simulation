@@ -202,6 +202,10 @@ export class DOMHandler {
           this.ctx.arc(c[0], c[1], multiRadius, 0, Math.PI * 2);
           this.ctx.stroke();
           break;
+        case "Change Well Force":
+          mouseEvent = null;
+          this.messageWorker({ toggleWell: m });
+          break;
         default:
           break;
       }

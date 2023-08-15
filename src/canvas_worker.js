@@ -35,6 +35,7 @@ class SimulationWorker extends SpatialHash {
       "newObject",
       "flow",
       "onButton",
+      "toggleWell",
     ];
 
     this.availableParticles = {
@@ -155,6 +156,14 @@ class SimulationWorker extends SpatialHash {
         this.envRenderer.render(this.env);
         break;
     }
+  }
+
+  toggleWell([x, y]) {
+    for (const well of this.env.GravityWell) {
+      if (this.envRenderer.ctx.isPointInPath(well.path, x - well.x, y - well.y))
+        well.reverseForce();
+    }
+    this.envRenderer.render(this.env);
   }
 
   /**
