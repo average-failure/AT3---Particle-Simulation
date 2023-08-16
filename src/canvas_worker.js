@@ -81,6 +81,20 @@ class SimulationWorker extends SpatialHash {
         ),
       ],
       GravityWell: (object) => [this.findNearParticles(object, object.r)],
+      Accelerator: (object) => [
+        this.findNearParticles(
+          { x: object.x + object.w / 2, y: object.y + object.h / 2 },
+          Math.sqrt(object.measurements[0] ** 2 + object.measurements[1] ** 2) +
+            this.settings.constants.max_radius
+        ),
+      ],
+      Decelerator: (object) => [
+        this.findNearParticles(
+          { x: object.x + object.w / 2, y: object.y + object.h / 2 },
+          Math.sqrt(object.measurements[0] ** 2 + object.measurements[1] ** 2) +
+            this.settings.constants.max_radius
+        ),
+      ],
     };
   }
 
@@ -188,7 +202,7 @@ class SimulationWorker extends SpatialHash {
    */
   newParticle([particle, type]) {
     if (!(this.particles.length < this.settings.constants.max_particles))
-      return alert("Max particles reached!"); // TODO: Alert doesn't work (it is a method of the global window object); send message to main thread instead
+      return alert("Max particles reached!"); // TODO: Alert doesn't work (it is a method of the global window object); send message to main thread instead (also for count)
 
     const d1 = {
       mass: randRangeInt(

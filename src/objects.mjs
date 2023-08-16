@@ -159,7 +159,7 @@ export class GravityWell extends Environment {
     this.force = params.force || [-1, 1][~~(Math.random() * 2)];
 
     (this.path = new Path2D()).arc(0, 0, this.r, 0, 2 * Math.PI);
-    this.genFill(params.ctx);
+    this.#genFill(params.ctx);
   }
 
   static getClassName() {
@@ -170,7 +170,7 @@ export class GravityWell extends Environment {
     return GravityWell.getClassName();
   }
 
-  genFill(ctx) {
+  #genFill(ctx) {
     const grdB = ctx.createRadialGradient(0, 0, 0, 0, 0, this.r);
     grdB.addColorStop(0, "#2020FFC0");
     grdB.addColorStop(0.9, "#2020FF20");
@@ -210,5 +210,204 @@ export class GravityWell extends Environment {
 export class Accelerator extends Environment {
   constructor(id, settings, params) {
     super(id, settings, params);
+
+    this.strength = params.strength || 1.03;
+
+    if (params.w) {
+      if (params.w > this.settings.constants.max_width)
+        this.w = this.settings.constants.max_width;
+      else if (params.w < -this.settings.constants.max_width)
+        this.w = -this.settings.constants.max_width;
+      else this.w = params.w;
+    } else {
+      this.w = 10;
+      this.x -= this.w / 2;
+    }
+
+    if (params.h) {
+      if (params.h > this.settings.constants.max_height)
+        this.h = this.settings.constants.max_height;
+      else if (params.h < -this.settings.constants.max_height)
+        this.h = -this.settings.constants.max_height;
+      else this.h = params.h;
+    } else {
+      this.h = 10;
+      this.y -= this.h / 2;
+    }
+
+    if (this.w < 0) {
+      this.x += this.w;
+      this.w = Math.abs(this.w);
+    }
+
+    if (this.h < 0) {
+      this.y += this.h;
+      this.h = Math.abs(this.h);
+    }
+
+    this.measurements = new Int16Array([this.w / 2, this.h / 2]);
+
+    this.genPath();
+    this.fill = "#AAAAFFA0";
+  }
+
+  static getClassName() {
+    return "Accelerator";
+  }
+
+  getClassName() {
+    return Accelerator.getClassName();
+  }
+
+  genPath() {
+    (this.path = new Path2D()).rect(0, 0, this.w, this.h);
+
+    const path = new Path2D(),
+      r = Math.min(...this.measurements) * 0.9,
+      w = this.measurements[0],
+      h = this.measurements[1],
+      r4 = r * 0.4;
+
+    path.moveTo(w - r4, h - r * 0.3);
+    path.lineTo(w, h - r * 0.6);
+    path.lineTo(w + r4, h - r * 0.3);
+
+    const m = new DOMMatrix([1, 0, 0, 1, 0, r4]);
+    path.addPath(path, m);
+
+    m.f = r4;
+    path.addPath(path, m);
+
+    this.extra = { mode: "stroke", colour: "black", width: r / 10, path };
+  }
+
+  detectCollision(p) {
+    const w = this.measurements[0],
+      h = this.measurements[1];
+
+    const dx = Math.abs(p.x - this.x - w),
+      dy = Math.abs(p.y - this.y - h);
+
+    if (dx > w + p.r || dy > h + p.r) return false;
+
+    if (dx <= w || dy <= h) return true;
+
+    return (dx - w) ** 2 + (dy - h) ** 2 <= p.r ** 2;
+  }
+
+  #accelerate(p) {
+    if (!this.detectCollision(p)) return false;
+
+    const max = 1000;
+
+    p.vx *= this.strength;
+    if (Math.abs(p.vx) > max) p.vx = Math.sign(p.vx) > 0 ? max : -max;
+
+    p.vy *= this.strength;
+    if (Math.abs(p.vy) > max) p.vy = Math.sign(p.vy) > 0 ? max : -max;
+  }
+
+  update([near]) {
+    for (const p of near) this.#accelerate(p);
+  }
+}
+
+export class Decelerator extends Environment {
+  constructor(id, settings, params) {
+    super(id, settings, params);
+
+    this.strength = params.strength || 1.03;
+
+    if (params.w) {
+      if (params.w > this.settings.constants.max_width)
+        this.w = this.settings.constants.max_width;
+      else if (params.w < -this.settings.constants.max_width)
+        this.w = -this.settings.constants.max_width;
+      else this.w = params.w;
+    } else {
+      this.w = 10;
+      this.x -= this.w / 2;
+    }
+
+    if (params.h) {
+      if (params.h > this.settings.constants.max_height)
+        this.h = this.settings.constants.max_height;
+      else if (params.h < -this.settings.constants.max_height)
+        this.h = -this.settings.constants.max_height;
+      else this.h = params.h;
+    } else {
+      this.h = 10;
+      this.y -= this.h / 2;
+    }
+
+    if (this.w < 0) {
+      this.x += this.w;
+      this.w = Math.abs(this.w);
+    }
+
+    if (this.h < 0) {
+      this.y += this.h;
+      this.h = Math.abs(this.h);
+    }
+
+    this.measurements = new Int16Array([this.w / 2, this.h / 2]);
+
+    this.genPath();
+    this.fill = "#FFAAAAA0";
+  }
+
+  static getClassName() {
+    return "Decelerator";
+  }
+
+  getClassName() {
+    return Decelerator.getClassName();
+  }
+
+  genPath() {
+    (this.path = new Path2D()).rect(0, 0, this.w, this.h);
+
+    const path = new Path2D(),
+      r = Math.min(...this.measurements) * 0.9,
+      w = this.measurements[0],
+      h = this.measurements[1],
+      r4 = r * 0.4;
+
+    path.moveTo(w - r4, h - r * 0.5);
+    path.lineTo(w, h - r * 0.2);
+    path.lineTo(w + r4, h - r * 0.5);
+
+    const m = new DOMMatrix([1, 0, 0, 1, 0, r4]);
+    path.addPath(path, m);
+
+    m.f = r4;
+    path.addPath(path, m);
+
+    this.extra = { mode: "stroke", colour: "black", width: r / 10, path };
+  }
+
+  detectCollision(p) {
+    const w = this.measurements[0],
+      h = this.measurements[1];
+
+    const dx = Math.abs(p.x - this.x - w),
+      dy = Math.abs(p.y - this.y - h);
+
+    if (dx > w + p.r || dy > h + p.r) return false;
+
+    if (dx <= w || dy <= h) return true;
+
+    return (dx - w) ** 2 + (dy - h) ** 2 <= p.r ** 2;
+  }
+
+  #decelerate(p) {
+    if (!this.detectCollision(p)) return false;
+
+    p.vx /= this.strength;
+    p.vy /= this.strength;
+  }
+
+  update([near]) {
+    for (const p of near) this.#decelerate(p);
   }
 }

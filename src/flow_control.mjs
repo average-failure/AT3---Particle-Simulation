@@ -44,8 +44,8 @@ export class FlowControl extends Environment {
     const path = new Path2D();
     path.moveTo(-this.size * 0.4, 0);
     path.lineTo(this.size * 0.4, 0);
-    path.lineTo(this.size * 0.2, this.size * 0.2);
-    path.moveTo(this.size * 0.4, 0);
+    path.moveTo(this.size * 0.2, this.size * 0.2);
+    path.lineTo(this.size * 0.4, 0);
     path.lineTo(this.size * 0.2, -this.size * 0.2);
     this.arrow = path;
   }
@@ -60,6 +60,7 @@ export class FlowControl extends Environment {
     for (const f of this.flow) {
       ctx.setTransform(1, 0, 0, 1, f.x, f.y);
       ctx.rotate(f.rotation);
+      ctx.lineWidth = this.size / 10;
       ctx.stroke(this.arrow);
     }
   }

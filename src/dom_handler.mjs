@@ -233,6 +233,8 @@ export class DOMHandler {
           break;
         case "object":
           switch (this.domElements.dropdowns.object_type.value) {
+            case "Accelerator":
+            case "Decelerator":
             case "Rectangle":
               if (Math.abs(dx) > settings.constants.max_width)
                 dx = settings.constants.max_width;
@@ -320,6 +322,12 @@ export class DOMHandler {
             case "FlowControl":
               this.messageWorker({ flow: ["end", m] });
               this.domElements.stats.objectCount.textContent = ++this.objectCount;
+              break;
+            case "Accelerator":
+              this.newObject({ x: pre[0], y: pre[1], w: dx, h: dy }, "Accelerator");
+              break;
+            case "Decelerator":
+              this.newObject({ x: pre[0], y: pre[1], w: dx, h: dy }, "Decelerator");
               break;
             default:
               break;
