@@ -9,8 +9,8 @@ export const settings = {
   },
   constants: {
     cell_size: 15, // * need to find what is the optimal cell size
-    max_radius: 10,
-    min_radius: 5,
+    max_radius: 20,
+    min_radius: 3,
     get max_mass() {
       delete this.max_mass;
       this.max_mass = this.max_radius * this.mass_radius_ratio;
@@ -22,12 +22,6 @@ export const settings = {
       return this.min_mass;
     },
     mass_radius_ratio: 10,
-
-    max_width: 1000,
-    max_height: 1000,
-
-    max_particles: 1000,
-    max_environment_objects: 1000,
   },
   variables: {
     /* mouse_collision_radius: 100,
@@ -36,17 +30,17 @@ export const settings = {
     },
     mouse_mass_radius_ratio: 10,
     mouse_collision_velocity: 0.01, */
-    gravity: 9.81,
+    gravity: 9.8,
     softening_constant: 0.15,
     attraction_radius: 0.1,
     attraction_strength: 50,
     repulsion_radius: 0.5,
     repulsion_strength: 100,
     dt: 0.1,
-    coefficient_of_restitution: 0.95,
+    coefficient_of_restitution: 0.99,
     drag: 0.999,
     flow_size: 10,
-    flow_strength: 5,
+    flow_strength: 3,
   },
   toggles: {
     gravity: true,
@@ -55,4 +49,5 @@ export const settings = {
     drag: false,
     show_velocity: false,
   },
+  pause: false,
 };

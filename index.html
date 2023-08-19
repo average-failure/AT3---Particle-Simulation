@@ -4,13 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Particle Simulation</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
     <link rel="stylesheet" href="style.css" />
     <script async src="src/prototype_changes.js"></script>
     <script defer src="src/main.js" type="module"></script>
   </head>
   <body>
-    <canvas id="envCanvas" class="noPointer"></canvas
-    ><canvas id="canvas">No canvas available</canvas>
+    <canvas id="envCanvas" class="noPointer"></canvas>
+    <canvas id="canvas">No canvas available</canvas>
     <canvas id="overlay" class="noPointer"></canvas>
 
     <div id="stats">
@@ -28,6 +36,13 @@
     <div class="settings left">
       <div id="checkboxes"></div>
       <div id="buttons"></div>
+    </div>
+
+    <div id="pause" class="hidden">
+      <h1>
+        Paused
+        <p>Click anywhere to resume...</p>
+      </h1>
     </div>
   </body>
 </html>

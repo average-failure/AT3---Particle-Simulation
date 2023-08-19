@@ -36,6 +36,8 @@ class SimulationWorker extends SpatialHash {
       "flow",
       "onButton",
       "toggleWell",
+      "pause",
+      "resume",
     ];
 
     this.availableParticles = {
@@ -95,6 +97,7 @@ class SimulationWorker extends SpatialHash {
             this.settings.constants.max_radius
         ),
       ],
+      BlackHole: () => [this.particles],
     };
   }
 
@@ -180,6 +183,15 @@ class SimulationWorker extends SpatialHash {
     this.envRenderer.render(this.env);
   }
 
+  pause() {
+    this.settings.pause = true;
+  }
+
+  resume() {
+    this.settings.pause = false;
+    this.animate();
+  }
+
   /**
    * A helper method to create instances of a selected particle type
    * @param {String} type The type of particle to create
@@ -201,9 +213,6 @@ class SimulationWorker extends SpatialHash {
    * @param {String} type A string containing the type of particle to create
    */
   newParticle([particle, type]) {
-    if (!(this.particles.length < this.settings.constants.max_particles))
-      return alert("Max particles reached!"); // TODO: Alert doesn't work (it is a method of the global window object); send message to main thread instead (also for count)
-
     const d1 = {
       mass: randRangeInt(
         this.settings.constants.max_mass,
@@ -233,6 +242,8 @@ class SimulationWorker extends SpatialHash {
 
     this.newClient(p);
     this.particles.push(p);
+
+    return p;
   }
 
   /**
@@ -258,7 +269,8 @@ class SimulationWorker extends SpatialHash {
     // Object.values(OBJECTS)[
     //   ~~(Math.random() * Object.keys(OBJECTS).length)
     // ];
-    if (type === "GravityWell") params.ctx = this.envRenderer.drawCtx;
+    if (type === "GravityWell" || type === "BlackHole")
+      params.ctx = this.envRenderer.drawCtx;
 
     return new SelectedClass(++this.oIds, settings, params);
   }
@@ -269,14 +281,6 @@ class SimulationWorker extends SpatialHash {
    * @param {String} type A string containing the type of environment object to create
    */
   newObject([object, type]) {
-    if (
-      !(
-        Object.values(this.env).flat().length <
-        this.settings.constants.max_environment_objects
-      )
-    )
-      return alert("Max particles reached!"); // TODO: Alert doesn't work (it is a method of the global window object); send message to main thread instead
-
     const d = {
       x: randRangeInt(this.width, 0),
       y: randRangeInt(this.height, 0),
@@ -293,6 +297,8 @@ class SimulationWorker extends SpatialHash {
     this.env[o.getClassName()].push(o);
 
     this.envRenderer.render(this.env);
+
+    return o;
   }
 
   findNearParticles(p, r) {
@@ -301,6 +307,47 @@ class SimulationWorker extends SpatialHash {
 
   findNearObjects(p, r) {
     return this.findNear(p, r).filter((n) => n instanceof Environment);
+  }
+
+  splitParticle(p) {
+    const masses = [],
+      min = this.settings.constants.min_mass,
+      parts = ~~(p.mass / 25 + (Math.random() - 0.5) * 2) + 1,
+      m = p.mass - min * parts,
+      c = ~~(m / parts),
+      d = c * 0.3;
+    let r = p.mass;
+
+    for (let i = 0; i < parts; i++) {
+      if (r < min) break;
+      const offset = ~~((Math.random() - 0.5) * 2 * d);
+      // const p = Math.max(c + offset + min, min);
+      const p = c + offset + min;
+      masses.push(p);
+      r -= p;
+    }
+
+    for (const mass of masses) {
+      const angle = Math.random() - 0.5,
+        cos = Math.cos(angle),
+        sin = Math.sin(angle);
+      const newP = this.newParticle([
+        {
+          x: p.x + (Math.random() - 0.5) * 5,
+          y: p.y + (Math.random() - 0.5) * 5,
+          vx: p.vx * cos - p.vy * sin,
+          vy: p.vx * sin + p.vy * cos,
+          mass,
+          immortal: true,
+        },
+        p.getClassName(),
+      ]);
+      setTimeout(() => {
+        newP.immortal = false;
+      }, 500);
+    }
+
+    this.deleteParticle(p);
   }
 
   // /**
@@ -367,7 +414,15 @@ class SimulationWorker extends SpatialHash {
   }
 
   #envCalculations(object) {
-    object.update?.(this.availableObjects[object.getClassName()]?.(object));
+    const returnValue = object.update?.(
+      this.availableObjects[object.getClassName()]?.(object)
+    );
+    if (returnValue instanceof Array && returnValue.length)
+      for (const r of returnValue) {
+        if (r.mass <= this.settings.constants.min_mass) this.deleteParticle(r);
+        else this.splitParticle(r);
+      }
+
     for (const flow of this.env.FlowControl) {
       if (flow.finished === true) {
         const size = Math.sqrt(2 * flow.size ** 2) + this.settings.constants.max_radius;
@@ -389,6 +444,8 @@ class SimulationWorker extends SpatialHash {
     for (const o of Object.values(this.env).flat()) this.#envCalculations(o);
 
     this.renderer.render(this.particles);
+
+    if (this.settings.pause === true) return;
 
     requestAnimationFrame(this.animate.bind(this));
   }

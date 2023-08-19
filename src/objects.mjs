@@ -1,41 +1,12 @@
 import { Environment } from "./environment.mjs";
 import { attract, repulse } from "./gravity_calculations.mjs";
+import { circleCollision, initRectShape, randBias, randHex } from "./utils.mjs";
 
 export class Rectangle extends Environment {
   constructor(id, settings, params) {
     super(id, settings, params);
 
-    if (params.w) {
-      if (params.w > this.settings.constants.max_width)
-        this.w = this.settings.constants.max_width;
-      else if (params.w < -this.settings.constants.max_width)
-        this.w = -this.settings.constants.max_width;
-      else this.w = params.w;
-    } else {
-      this.w = 10;
-      this.x -= this.w / 2;
-    }
-
-    if (params.h) {
-      if (params.h > this.settings.constants.max_height)
-        this.h = this.settings.constants.max_height;
-      else if (params.h < -this.settings.constants.max_height)
-        this.h = -this.settings.constants.max_height;
-      else this.h = params.h;
-    } else {
-      this.h = 10;
-      this.y -= this.h / 2;
-    }
-
-    if (this.w < 0) {
-      this.x += this.w;
-      this.w = Math.abs(this.w);
-    }
-
-    if (this.h < 0) {
-      this.y += this.h;
-      this.h = Math.abs(this.h);
-    }
+    Object.assign(this, initRectShape(this.x, this.y, params.w, params.h));
 
     this.bounds = new Int16Array([this.x, this.x + this.w, this.y, this.y + this.h]);
 
@@ -117,31 +88,17 @@ export class Circle extends Environment {
   }
 
   detectCollision(p) {
-    const dx = this.x - p.x,
-      dy = this.y - p.y;
-    const dSq = dx ** 2 + dy ** 2;
-
-    if (dSq <= (this.r + p.r) ** 2) {
-      const d = Math.sqrt(dSq);
-
-      const angle = Math.atan2(dy, dx);
-
-      p.x = this.x - (this.r + p.r) * Math.cos(angle);
-      p.y = this.y - (this.r + p.r) * Math.sin(angle);
-
-      const nvx = dx / d,
-        nvy = dy / d;
-
-      const speed =
-        (p.vx * nvx + p.vy * nvy) *
-        (this.settings.toggles.coefficient_of_restitution
-          ? this.settings.variables.coefficient_of_restitution
-          : 1);
-
-      if (speed < 0) return;
-
-      p.vx -= speed * nvx * 2;
-      p.vy -= speed * nvy * 2;
+    const collision = circleCollision(
+      this,
+      p,
+      "other",
+      this.settings.toggles.coefficient_of_restitution
+        ? this.settings.variables.coefficient_of_restitution
+        : 1
+    );
+    if (collision !== false) {
+      p.vx -= collision.speed * collision.nvx * 2;
+      p.vy -= collision.speed * collision.nvy * 2;
     }
   }
 
@@ -193,7 +150,7 @@ export class GravityWell extends Environment {
   }
 
   #attract(p) {
-    attract(this, p, this.settings);
+    attract(this, p, this.settings, true);
   }
 
   #repulse(p) {
@@ -213,39 +170,7 @@ export class Accelerator extends Environment {
 
     this.strength = params.strength || 1.03;
 
-    if (params.w) {
-      if (params.w > this.settings.constants.max_width)
-        this.w = this.settings.constants.max_width;
-      else if (params.w < -this.settings.constants.max_width)
-        this.w = -this.settings.constants.max_width;
-      else this.w = params.w;
-    } else {
-      this.w = 10;
-      this.x -= this.w / 2;
-    }
-
-    if (params.h) {
-      if (params.h > this.settings.constants.max_height)
-        this.h = this.settings.constants.max_height;
-      else if (params.h < -this.settings.constants.max_height)
-        this.h = -this.settings.constants.max_height;
-      else this.h = params.h;
-    } else {
-      this.h = 10;
-      this.y -= this.h / 2;
-    }
-
-    if (this.w < 0) {
-      this.x += this.w;
-      this.w = Math.abs(this.w);
-    }
-
-    if (this.h < 0) {
-      this.y += this.h;
-      this.h = Math.abs(this.h);
-    }
-
-    this.measurements = new Int16Array([this.w / 2, this.h / 2]);
+    Object.assign(this, initRectShape(this.x, this.y, params.w, params.h));
 
     this.genPath();
     this.fill = "#AAAAFFA0";
@@ -318,39 +243,7 @@ export class Decelerator extends Environment {
 
     this.strength = params.strength || 1.03;
 
-    if (params.w) {
-      if (params.w > this.settings.constants.max_width)
-        this.w = this.settings.constants.max_width;
-      else if (params.w < -this.settings.constants.max_width)
-        this.w = -this.settings.constants.max_width;
-      else this.w = params.w;
-    } else {
-      this.w = 10;
-      this.x -= this.w / 2;
-    }
-
-    if (params.h) {
-      if (params.h > this.settings.constants.max_height)
-        this.h = this.settings.constants.max_height;
-      else if (params.h < -this.settings.constants.max_height)
-        this.h = -this.settings.constants.max_height;
-      else this.h = params.h;
-    } else {
-      this.h = 10;
-      this.y -= this.h / 2;
-    }
-
-    if (this.w < 0) {
-      this.x += this.w;
-      this.w = Math.abs(this.w);
-    }
-
-    if (this.h < 0) {
-      this.y += this.h;
-      this.h = Math.abs(this.h);
-    }
-
-    this.measurements = new Int16Array([this.w / 2, this.h / 2]);
+    Object.assign(this, initRectShape(this.x, this.y, params.w, params.h));
 
     this.genPath();
     this.fill = "#FFAAAAA0";
@@ -409,5 +302,73 @@ export class Decelerator extends Environment {
 
   update([near]) {
     for (const p of near) this.#decelerate(p);
+  }
+}
+
+export class BlackHole extends Environment {
+  constructor(id, settings, params) {
+    super(id, settings, params);
+
+    this.strength = params.strength || 1000;
+    this.r = params.r || 50;
+
+    this.#genPath();
+    this.#genFill(params.ctx);
+  }
+
+  static getClassName() {
+    return "BlackHole";
+  }
+
+  getClassName() {
+    return BlackHole.getClassName();
+  }
+
+  #genPath() {
+    (this.path = new Path2D()).arc(0, 0, this.r, 0, 2 * Math.PI);
+
+    this.extra = {
+      mode: "stroke",
+      colour: [],
+      width: 1,
+      path: [],
+    };
+
+    const max = this.r * 0.75,
+      min = this.r / 8,
+      bias = (max + min) / 2;
+
+    for (let i = 0, len = Math.random() * (this.r / 4) + this.r / 4; i < len; i++) {
+      const path = new Path2D();
+      path.arc(
+        0,
+        0,
+        randBias(max, min, bias),
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2
+      );
+      this.extra.path.push(path);
+      this.extra.colour.push(randHex([149, 120, 56], 4));
+    }
+  }
+
+  #genFill(ctx) {
+    const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, this.r);
+    grd.addColorStop(0, "#000000FF");
+    grd.addColorStop(0.4, "#000000E0");
+    grd.addColorStop(0.6, "#FFFFFF93");
+    grd.addColorStop(1, "#44444400");
+
+    this.fill = grd;
+  }
+
+  #attract(p) {
+    return attract(this, p, this.settings, true, 0.4);
+  }
+
+  update([near]) {
+    const explodeList = [];
+    for (const p of near) if (this.#attract(p) === "EXPLODE") explodeList.push(p);
+    return explodeList;
   }
 }

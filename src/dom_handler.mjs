@@ -12,9 +12,12 @@ export class DOMHandler {
       toggles: {},
       dropdowns: {},
       buttons: {},
+      pause: document.getElementById("pause"),
     };
     this.particleCount = 0;
     this.objectCount = 0;
+
+    this.paused = false;
 
     this.#initDOMElements();
   }
@@ -100,7 +103,8 @@ export class DOMHandler {
         this.messageWorker({ onButton: event });
       });
 
-      if (options.callback) button.addEventListener("click", options.callback.bind(this));
+      if (options.hasOwnProperty("callback"))
+        button.addEventListener("click", options.callback.bind(this));
 
       this.domElements.buttons[event] = button;
     }
@@ -129,6 +133,29 @@ export class DOMHandler {
       event.preventDefault();
     });
 
+    document.body.addEventListener("keydown", (e) => {
+      if (this.paused === true && !(e.altKey || e.ctrlKey || e.shiftKey)) this.resume();
+      else if (this.paused === false && e.key === "Escape") this.pause();
+    });
+
+    {
+      let resume = false;
+
+      this.domElements.pause.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        resume = true;
+      });
+
+      this.domElements.pause.addEventListener("mouseup", () => {
+        if (resume !== true) return;
+        this.resume();
+        resume = false;
+      });
+    }
+
+    window.addEventListener("focus", this.resume.bind(this));
+    window.addEventListener("blur", this.pause.bind(this));
+
     this.#handleMouse();
 
     // this.canvas.addEventListener("mousemove", (event) => {
@@ -143,41 +170,84 @@ export class DOMHandler {
     // TODO
   }
 
-  /**
-   * A helper method to get the mouse position
-   * @param {Event} event The mouse down, move, up or click event
-   * @returns The mouse position in an array
-   */
-  #getMousePos(event) {
-    const bounds = this.canvas.getBoundingClientRect();
-    return [event.clientX - bounds.left, event.clientY - bounds.top];
+  pause() {
+    this.paused = true;
+    if (this.mouseDown === true) {
+      this.mouseDown = false;
+      this.mouseDown2 = true;
+    }
+
+    this.domElements.pause.style.pointerEvents = "all";
+    this.domElements.pause.style.opacity = 1;
+
+    this.messageWorker({ pause: null });
+
+    for (const element of document.body.children)
+      if (element !== this.domElements.pause) element.classList.add("blur");
+  }
+
+  resume() {
+    this.paused = false;
+    if (this.mouseDown2 === true) this.mouseDown = true;
+    if (this.mouseEvent === "multi") this.multi();
+
+    this.domElements.pause.style.pointerEvents = "none";
+    this.domElements.pause.style.opacity = 0;
+
+    this.messageWorker({ resume: null });
+
+    const blur = document.getElementsByClassName("blur");
+    while (blur.length) blur[0].classList.remove("blur");
   }
 
   #handleMouse() {
-    let m, mouseDown, mouseEvent, dx, dy, d, interval;
+    this.mouseDown = false;
+    let m, dx, dy, d;
     const pre = [],
       pre2 = [],
       points = [],
       c = [];
     const multiRadius = 80;
+    let t = false;
 
-    this.canvas.addEventListener("mousedown", (event) => {
+    DOMHandler.prototype.multi = () => {
+      if (this.mouseDown === true) requestAnimationFrame(this.multi);
+      if ((t = !t)) return;
+      const angle = Math.random() * 2 * Math.PI,
+        hyp = Math.sqrt(Math.random()) * (multiRadius - settings.constants.max_radius);
+      this.newParticle(
+        { x: c[0] + Math.cos(angle) * hyp, y: c[1] + Math.sin(angle) * hyp },
+        this.domElements.dropdowns.particle_type.value
+      );
+    };
+
+    /**
+     * A helper method to get the mouse position
+     * @param {MouseEvent} event The mouse event to get the position of
+     * @returns The mouse position in an array
+     */
+    const getMousePos = (event) => {
+      const bounds = this.canvas.getBoundingClientRect();
+      return [event.clientX - bounds.left, event.clientY - bounds.top];
+    };
+
+    DOMHandler.prototype.mousedown = (event) => {
       event.preventDefault();
 
-      if (mouseDown === true) return;
+      if (this.mouseDown === true) return;
 
-      m = this.#getMousePos(event);
+      m = getMousePos(event);
 
       pre[0] = m[0];
       pre[1] = m[1];
-      mouseDown = true;
+      this.mouseDown = true;
 
       switch (this.domElements.dropdowns.mouse_mode.value) {
         case "New Particle":
-          mouseEvent = "particle";
+          this.mouseEvent = "particle";
           break;
         case "New Object":
-          mouseEvent = "object";
+          this.mouseEvent = "object";
           if (this.domElements.dropdowns.object_type.value === "FlowControl") {
             points.length = 0;
             this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
@@ -187,34 +257,26 @@ export class DOMHandler {
         case "Multi Particle":
           c[0] = m[0];
           c[1] = m[1];
-          mouseEvent = "multi";
-          interval = setInterval(() => {
-            const angle = Math.random() * 2 * Math.PI,
-              hyp =
-                Math.sqrt(Math.random()) * (multiRadius - settings.constants.max_radius);
-            this.newParticle(
-              { x: c[0] + Math.cos(angle) * hyp, y: c[1] + Math.sin(angle) * hyp },
-              this.domElements.dropdowns.particle_type.value
-            );
-          }, 50);
+          this.mouseEvent = "multi";
+          this.multi();
           this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
           this.ctx.beginPath();
           this.ctx.arc(c[0], c[1], multiRadius, 0, Math.PI * 2);
           this.ctx.stroke();
           break;
         case "Change Well Force":
-          mouseEvent = null;
+          this.mouseEvent = null;
           this.messageWorker({ toggleWell: m });
           break;
         default:
           break;
       }
-    });
+    };
 
-    this.canvas.addEventListener("mousemove", (event) => {
-      if (!(mouseDown === true)) return;
+    DOMHandler.prototype.mousemove = (event) => {
+      if (!(this.mouseDown === true)) return;
 
-      m = this.#getMousePos(event);
+      m = getMousePos(event);
 
       dx = m[0] - pre[0];
       dy = m[1] - pre[1];
@@ -222,7 +284,7 @@ export class DOMHandler {
       c[0] = m[0];
       c[1] = m[1];
 
-      switch (mouseEvent) {
+      switch (this.mouseEvent) {
         case "particle":
           this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
           this.ctx.beginPath();
@@ -246,6 +308,7 @@ export class DOMHandler {
               this.ctx.fillRect(pre[0], pre[1], dx, dy);
               break;
             case "GravityWell":
+            case "BlackHole":
             case "Circle":
               this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
               this.ctx.beginPath();
@@ -279,19 +342,17 @@ export class DOMHandler {
         default:
           break;
       }
-    });
+    };
 
-    this.canvas.addEventListener("mouseup", (event) => {
-      if (!(mouseDown === true)) return;
+    DOMHandler.prototype.mouseup = (event) => {
+      if (this.mouseDown !== true) return;
 
-      m = this.#getMousePos(event);
+      m = getMousePos(event);
 
       dx = m[0] - pre[0];
       dy = m[1] - pre[1];
 
-      clearInterval(interval);
-
-      switch (mouseEvent) {
+      switch (this.mouseEvent) {
         case "object":
           switch (this.domElements.dropdowns.object_type.value) {
             case "Rectangle":
@@ -307,6 +368,18 @@ export class DOMHandler {
                   strength: d ** 1.5,
                 },
                 "GravityWell"
+              );
+              break;
+            case "BlackHole":
+              d = Math.sqrt(dx ** 2 + dy ** 2);
+              this.newObject(
+                {
+                  x: pre[0],
+                  y: pre[1],
+                  r: d,
+                  strength: d ** 2,
+                },
+                "BlackHole"
               );
               break;
             case "Circle":
@@ -346,7 +419,14 @@ export class DOMHandler {
           break;
       }
       this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
-      mouseDown = false;
-    });
+      this.mouseDown = false;
+      this.mouseEvent = null;
+    };
+
+    this.canvas.addEventListener("mousedown", this.mousedown);
+
+    this.canvas.addEventListener("mousemove", this.mousemove);
+
+    this.canvas.addEventListener("mouseup", this.mouseup);
   }
 }

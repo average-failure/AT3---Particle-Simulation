@@ -1,5 +1,5 @@
 import { attract, repulse } from "./gravity_calculations.mjs";
-import { randRangeInt } from "./utils.mjs";
+import { circleCollision, randRangeInt } from "./utils.mjs";
 import { Vector2 } from "./vectors.mjs";
 
 export class Particle {
@@ -9,7 +9,7 @@ export class Particle {
    * @param {settings} settings The simulation settings
    * @param {Object} param2 The parameters of the particle
    */
-  constructor(id, settings, { x, y, vx, vy, mass }) {
+  constructor(id, settings, { x, y, vx, vy, mass, immortal }) {
     if (!Number.isInteger(id)) throw "Error: Id not provided.";
     if (!(Number.isFinite(x) && Number.isFinite(y)))
       throw "Error: Position not provided.";
@@ -21,12 +21,14 @@ export class Particle {
     this.vy = vy || 0;
     this.settings = settings;
     this.mass =
-      mass ||
-      randRangeInt(this.settings.constants.max_mass, this.settings.constants.min_mass);
-    if ((this.r = this.settings.radius(mass)) > this.settings.constants.max_radius)
-      this.r = this.settings.constants.max_radius;
-    else if (this.r < this.settings.constants.min_radius)
-      this.r = this.settings.constants.min_radius;
+      mass || randRangeInt(settings.constants.max_mass, settings.constants.min_mass);
+    this.r = settings.radius(this.mass);
+    /* if ((this.r = settings.radius(this.mass)) > settings.constants.max_radius)
+      this.r = settings.constants.max_radius;
+    else if (this.r < settings.constants.min_radius)
+      this.r = settings.constants.min_radius; */
+
+    this.immortal = immortal || false;
 
     (this.path = new Path2D()).arc(0, 0, this.r, 0, Math.PI * 2);
   }
@@ -141,50 +143,25 @@ export class Particle {
   //   } */
   // }
 
-  detectCollision(otherParticle) {
-    // Find distance between particles
-    const dx = this.x - otherParticle.x,
-      dy = this.y - otherParticle.y;
-    const dSq = dx ** 2 + dy ** 2;
-
-    if (dSq <= (this.r + otherParticle.r) ** 2) {
-      this.collide(otherParticle, { dx, dy, dSq });
-    }
-  }
-
-  collide(otherParticle, { dx, dy, dSq, d }) {
-    const dist = Number.isFinite(d) ? d : Math.sqrt(dSq);
-
-    /* const angle = Math.atan2(dy, dx);
-
-      otherParticle.x = this.x - (this.r + otherParticle.r) * Math.cos(angle);
-      otherParticle.y = this.y - (this.r + otherParticle.r) * Math.sin(angle); */
-
-    // Normalised vectors
-    const nvx = Number.isFinite(dx / dist) ? dx / dist : 0,
-      nvy = Number.isFinite(dy / dist) ? dy / dist : 0;
-
-    // Relative vectors
-    const rvx = otherParticle.vx - this.vx,
-      rvy = otherParticle.vy - this.vy;
-
-    // Calculate the dot product of normalised and relative vectors
-    const speed =
-      (rvx * nvx + rvy * nvy) *
-      (this.settings.toggles.coefficient_of_restitution
+  detectCollision(p) {
+    const collision = circleCollision(
+      this,
+      p,
+      "this",
+      this.settings.toggles.coefficient_of_restitution
         ? this.settings.variables.coefficient_of_restitution
-        : 1);
+        : 1
+    );
+    if (collision !== false) {
+      // Calculate the impulse of the collision
+      const impulse = (2 * collision.speed) / (this.mass + p.mass);
 
-    if (speed < 0) return;
-
-    // Calculate the impulse of the collision
-    const impulse = (2 * speed) / (this.mass + otherParticle.mass);
-
-    // Calculate the velocity based on the impulse
-    this.vx += impulse * otherParticle.mass * nvx;
-    this.vy += impulse * otherParticle.mass * nvy;
-    otherParticle.vx -= impulse * this.mass * nvx;
-    otherParticle.vy -= impulse * this.mass * nvy;
+      // Calculate the velocity based on the impulse
+      this.vx += impulse * p.mass * collision.nvx;
+      this.vy += impulse * p.mass * collision.nvy;
+      p.vx -= impulse * this.mass * collision.nvx;
+      p.vy -= impulse * this.mass * collision.nvy;
+    }
   }
 
   #checkBoundaries(width, height) {
@@ -229,7 +206,7 @@ export class Particle {
 
   updateColour() {
     this.colour = `hsl(${(this.colourComp =
-      Math.abs(this.vx / 2) + Math.abs(this.vy / 2))},100%,${this.colourComp / 2 + 30}%)`;
+      Math.abs(this.vx / 3) + Math.abs(this.vy / 3))},100%,${this.colourComp / 2 + 30}%)`;
   }
 
   updateCalculations(width, height) {

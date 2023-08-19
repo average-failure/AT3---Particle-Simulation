@@ -9,10 +9,10 @@ const randColour = (mix, mixEffect = 2) => {
 
   if (mix)
     colour.forEach((elem, idx) => {
-      elem = Math.floor(
+      colour[idx] = ~~(
         (elem +
           ((mix instanceof Array ? mix : Object.values(mix))[idx] || elem) * mixEffect) /
-          (mixEffect + 1)
+        (mixEffect + 1)
       );
     });
 
@@ -123,6 +123,49 @@ export const randRangeInt = (max, min = 0) => ~~(Math.random() * (max - min) + m
  */
 export const randRange = (max, min = 0, round) =>
   Number((Math.random() * (max - min) + min).toFixed(round));
+
+/**
+ * Generates a random number biased to a given number
+ * @param {Number} max The maximum number
+ * @param {Number} min The minimum number
+ * @param {Number} bias The number that the random is biased to
+ * @param {Number} strength The strength of the bias (a number between zero and one)
+ * @param {Number} round The number of decimals to round to
+ * @returns A random number biased towards the provided bias
+ */
+export const randBias = (max, min = 0, bias = 0, strength = 1, round) => {
+  const mix = Math.random() * strength;
+  return Number(
+    ((Math.random() * (max - min) + min) * (1 - mix) + bias * mix).toFixed(round)
+  );
+};
+
+/**
+ * Generates a random integer biased to a given number
+ * @param {Number} max The maximum number
+ * @param {Number} min The minimum number
+ * @param {Number} bias The number that the random is biased to
+ * @param {Number} strength The strength of the bias
+ * @returns A random integer biased towards the provided bias
+ */
+export const randBiasInt = (max, min = 0, bias = 0, strength = 1) => {
+  const mix = Math.random() * strength;
+  return ~~((Math.random() * (max - min) + min) * (1 - mix) + bias * mix);
+};
+
+/**
+ * Generates a random coordinate inside a given circle
+ * @param {Number} x The x coordinate of the center of the circle
+ * @param {Number} y The y coordinate of the center of the circle
+ * @param {Number} maxR The max radius of the circle
+ * @param {Number} minR The minimum radius of the circle
+ * @returns A random coordinate within the circle provided
+ */
+export const randCircle = (x, y, maxR, minR = 0) => {
+  const angle = Math.random() * 2 * Math.PI,
+    hyp = Math.random() * (maxR - minR) + minR;
+  return [x + Math.cos(angle) * hyp, y + Math.sin(angle) * hyp];
+};
 
 /**
  * Returns a promise that resolves on an event
@@ -256,12 +299,16 @@ export const createCheckbox = (parentSelector, options, id) => {
   if (id)
     container.innerHTML = `
       <label for="${id}Checkbox" class="checkboxLabel">${name}</label>
-      <input id="${id}Checkbox" class="checkbox" type="checkbox" ${value} ${optionals} />
+      <input id="${id}Checkbox" class="checkbox" type="checkbox" ${
+      value === true ? "checked" : ""
+    } ${optionals} />
     `;
   else
     container.innerHTML = `
       <div class="checkboxLabel">${name}</div>
-      <input class="checkbox" type="checkbox" ${value} ${optionals} />
+      <input class="checkbox" type="checkbox" ${
+        value === true ? "checked" : ""
+      } ${optionals} />
     `;
   parentElement.appendChild(container);
 
@@ -334,4 +381,81 @@ export const createButton = (parentSelector, options, id) => {
   parentElement.appendChild(container);
 
   return container.querySelector(id ? `#${id}Button` : ".button");
+};
+
+export const initRectShape = (x, y, w, h) => {
+  const defaultSize = 50;
+  const threshold = 25;
+
+  if (!w || Math.abs(w) < threshold) {
+    w = defaultSize;
+    x -= w / 2;
+  }
+
+  if (!h || Math.abs(h) < threshold) {
+    h = defaultSize;
+    y -= h / 2;
+  }
+
+  if (w < 0) {
+    x += w;
+    w = Math.abs(w);
+  }
+
+  if (h < 0) {
+    y += h;
+    h = Math.abs(h);
+  }
+
+  return { x, y, w, h, measurements: new Int16Array([w / 2, h / 2]) };
+};
+
+export const circleCollision = (c1, c2, mode, cor) => {
+  const dx = c1.x - c2.x,
+    dy = c1.y - c2.y;
+  const dSq = dx ** 2 + dy ** 2;
+
+  const r = c1.r + c2.r;
+
+  if (!(dSq <= r * r)) return false;
+
+  const d = Math.sqrt(dSq);
+
+  const angle = Math.atan2(dy, dx);
+
+  switch (mode) {
+    case "none":
+      break;
+    case "this":
+      c1.x = c2.x + r * Math.cos(angle);
+      c1.y = c2.y + r * Math.sin(angle);
+      break;
+    case "other":
+      c2.x = c1.x - r * Math.cos(angle);
+      c2.y = c1.y - r * Math.sin(angle);
+      break;
+    case "both":
+      const temp = [c1.x, c1.y];
+
+      c1.x = c2.x + r * Math.cos(angle);
+      c1.y = c2.y + r * Math.sin(angle);
+
+      c2.x = temp[0] - r * Math.cos(angle);
+      c2.y = temp[1] - r * Math.sin(angle);
+      break;
+    default:
+      break;
+  }
+
+  const nvx = Number.isFinite(dx / d) ? dx / d : 0,
+    nvy = Number.isFinite(dy / d) ? dy / d : 0;
+
+  const rvx = (Number.isFinite(c2.vx) ? c2.vx : 0) - (Number.isFinite(c1.vx) ? c1.vx : 0),
+    rvy = (Number.isFinite(c2.vy) ? c2.vy : 0) - (Number.isFinite(c1.vy) ? c1.vy : 0);
+
+  const speed = (rvx * nvx + rvy * nvy) * cor;
+
+  if (speed < 0) return false;
+
+  return { nvx, nvy, speed };
 };

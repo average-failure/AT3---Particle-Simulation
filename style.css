@@ -1,5 +1,6 @@
 * {
   box-sizing: border-box;
+  transition: all 0.2s;
 }
 canvas {
   position: absolute;
@@ -22,7 +23,7 @@ canvas {
   flex-direction: row;
   align-items: stretch;
   min-height: 0;
-  z-index: 100;
+  z-index: 10;
 }
 .settings.left {
   margin: auto auto auto 0;
@@ -42,8 +43,32 @@ canvas {
   background-color: rgba(150, 150, 150, 0.4);
   padding: 20px;
   color: white;
-  z-index: 100;
+  z-index: 10;
 }
 .hidden {
   display: none;
+}
+#pause {
+  position: fixed;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #232323aa;
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+}
+#pause > h1 {
+  color: #ffffffee;
+  font: 600 10vmin "Roboto Slab";
+}
+#pause > h1 > p {
+  font: 200 3vmin "Roboto Slab";
+}
+.blur {
+  filter: blur(5px);
 }

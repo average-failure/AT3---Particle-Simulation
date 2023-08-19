@@ -53,13 +53,13 @@ export class SpatialHash {
   }
 
   /**
-   * Finds all neighbours of a given particle within a specified radius
-   * @param {Particle} particle The particle to find neighbours of
+   * Finds all neighbours of a given client within a specified radius
+   * @param {*} client The client to find neighbours of
    * @param {number} radius The radius of the search (not in cells)
-   * @returns All particles in the radius around the provided particle
+   * @returns All clients in the radius around the provided client
    */
-  findNear(particle, radius) {
-    const { x, y } = particle,
+  findNear(client, radius) {
+    const { x, y } = client,
       near = new Set(),
       hashKey = [
         ~~(x / this.settings.constants.cell_size),
@@ -67,23 +67,17 @@ export class SpatialHash {
       ],
       cellRad = Math.ceil(radius / this.settings.constants.cell_size);
 
-    for (
-      let currX = hashKey[0] - cellRad, maxX = hashKey[0] + cellRad;
-      currX <= maxX;
-      currX++
-    )
-      for (
-        let currY = hashKey[1] - cellRad, maxY = hashKey[1] + cellRad;
-        currY <= maxY;
-        currY++
-      ) {
-        const key = `${currX},${currY}`;
-        if (this.grid[key])
-          for (const p of this.grid[key]) {
-            const distBetweenSq = (p.x - x) ** 2 + (p.y - y) ** 2;
-            if (distBetweenSq <= radius ** 2 && p !== particle) near.add(p);
+    for (let cx = hashKey[0] - cellRad, mx = hashKey[0] + cellRad; cx <= mx; cx++) {
+      for (let cy = hashKey[1] - cellRad, my = hashKey[1] + cellRad; cy <= my; cy++) {
+        const key = `${cx},${cy}`;
+        if (this.grid.hasOwnProperty(key)) {
+          for (const c of this.grid[key]) {
+            const distBetweenSq = (c.x - x) ** 2 + (c.y - y) ** 2;
+            if (distBetweenSq <= radius ** 2 && c !== client) near.add(c);
           }
+        }
       }
+    }
 
     return Array.from(near);
   }

@@ -1,7 +1,7 @@
 function gravity(mode, p1, p2, settings) {
   const dx = p1.x - p2.x,
     dy = p1.y - p2.y;
-  const dSq = dx ** 2 + dy ** 2;
+  const dSq = dx * dx + dy * dy;
 
   let f =
     (p1.strength *
@@ -21,8 +21,13 @@ function gravity(mode, p1, p2, settings) {
   return { dx, dy, f };
 }
 
-export function attract(p1, p2, settings) {
+export function attract(p1, p2, settings, blackHole, threshold) {
+  if (p2.immortal === true) return;
+
   const { dx, dy, f } = gravity(1, p1, p2, settings);
+
+  if (dx * dx + dy * dy < (p1.r * (threshold || 0.1)) ** 2 && blackHole === true)
+    return "EXPLODE";
 
   p2.vx += f * dx * settings.variables.dt;
   p2.vy += f * dy * settings.variables.dt;

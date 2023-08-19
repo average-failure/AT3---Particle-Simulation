@@ -11,26 +11,39 @@ export class EnvironmentRenderer extends RenderBase {
     this.render(objects);
   }
 
-  draw({ Rectangle, Circle, FlowControl, Accelerator, Decelerator, GravityWell }) {
-    // Drawing is separate to get correct rendering order
+  draw(objects) {
+    const {
+      Rectangle: rect,
+      Circle: circle,
+      FlowControl: fc,
+      Accelerator: acc,
+      Decelerator: dec,
+      GravityWell: gw,
+      BlackHole: bh,
+    } = objects;
 
-    for (const o of Accelerator.concat(Decelerator, GravityWell)) {
+    const renderOrder = [acc, dec, gw, bh, fc, rect, circle].flat();
+
+    for (const o of renderOrder) {
+      if (o instanceof FlowControl && o.finished === true) {
+        o.render(this.drawCtx);
+        continue;
+      }
+
       this.translate(o.x, o.y);
-      this.drawCtx.fillStyle = o.fill;
+      this.drawCtx.fillStyle = o.fill || "#AAAAAAF0";
       this.drawCtx.fill(o.path);
 
       if (o.hasOwnProperty("extra")) {
         if (o.extra.hasOwnProperty("width")) this.drawCtx.lineWidth = o.extra.width;
         this.drawCtx[o.extra.mode + "Style"] = o.extra.colour;
-        this.drawCtx[o.extra.mode](o.extra.path);
+        if (o.extra.path instanceof Array)
+          for (let i = 0, len = o.extra.path.length; i < len; i++) {
+            this.drawCtx[o.extra.mode + "Style"] = o.extra.colour[i];
+            this.drawCtx[o.extra.mode](o.extra.path[i]);
+          }
+        else this.drawCtx[o.extra.mode](o.extra.path);
       }
-    }
-    for (const o of FlowControl) o.render(this.drawCtx);
-
-    for (const o of Rectangle.concat(Circle)) {
-      this.translate(o.x, o.y);
-      this.drawCtx.fillStyle = "#AAAAAAF0";
-      this.drawCtx.fill(o.path);
     }
   }
 }
