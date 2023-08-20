@@ -57,6 +57,7 @@ export class FlowControl extends Environment {
       ctx.rotate(f.rotation);
       ctx.fillRect(-f.size, -f.size, f.dSize, f.dSize);
     }
+    ctx.strokeStyle = "black";
     for (const f of this.flow) {
       ctx.setTransform(1, 0, 0, 1, f.x, f.y);
       ctx.rotate(f.rotation);

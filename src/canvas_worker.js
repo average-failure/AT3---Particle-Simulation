@@ -21,6 +21,8 @@ class SimulationWorker extends SpatialHash {
     this.pIds = this.oIds = -1;
     this.particles = [];
 
+    this.counter = 0;
+
     this.env = { FlowControl: [] };
     for (const o of Object.keys(OBJECTS)) this.env[o] = [];
 
@@ -444,6 +446,8 @@ class SimulationWorker extends SpatialHash {
     for (const o of Object.values(this.env).flat()) this.#envCalculations(o);
 
     this.renderer.render(this.particles);
+    if (this.settings.toggles.animated_environment === true)
+      this.envRenderer.render(this.env);
 
     if (this.settings.pause === true) return;
 

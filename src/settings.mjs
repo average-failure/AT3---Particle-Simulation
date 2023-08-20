@@ -48,6 +48,7 @@ export const settings = {
     coefficient_of_restitution: true,
     drag: false,
     show_velocity: false,
+    animated_environment: false,
   },
   pause: false,
 };

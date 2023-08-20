@@ -309,8 +309,8 @@ export class BlackHole extends Environment {
   constructor(id, settings, params) {
     super(id, settings, params);
 
-    this.strength = params.strength || 1000;
     this.r = params.r || 50;
+    this.strength = params.strength || this.r ** 2;
 
     this.#genPath();
     this.#genFill(params.ctx);
@@ -328,9 +328,8 @@ export class BlackHole extends Environment {
     (this.path = new Path2D()).arc(0, 0, this.r, 0, 2 * Math.PI);
 
     this.extra = {
-      mode: "stroke",
       colour: [],
-      width: 1,
+      rotation: 0,
       path: [],
     };
 

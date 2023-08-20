@@ -455,7 +455,7 @@ export const circleCollision = (c1, c2, mode, cor) => {
 
   const speed = (rvx * nvx + rvy * nvy) * cor;
 
-  if (speed < 0) return false;
+  if (speed <= 0) return false;
 
   return { nvx, nvy, speed };
 };

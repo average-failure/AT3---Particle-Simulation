@@ -79,6 +79,12 @@ export const toggles = {
     {
       softening_constant: { value: t.softening_constant, name: "Softening Constant" },
     },
+    {
+      animated_environment: {
+        value: t.animated_environment,
+        name: "Animated Environment",
+      },
+    },
   ],
 };
 
