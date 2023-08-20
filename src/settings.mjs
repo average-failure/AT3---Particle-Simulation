@@ -1,12 +1,4 @@
 export const settings = {
-  /**
-   * Returns a radius based on the given mass and the mass radius ratio
-   * @param {number} mass
-   * @returns radius
-   */
-  radius(mass) {
-    return ~~(mass / this.constants.mass_radius_ratio);
-  },
   constants: {
     cell_size: 15, // * need to find what is the optimal cell size
     max_radius: 20,

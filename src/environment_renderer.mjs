@@ -62,7 +62,7 @@ export class EnvironmentRenderer extends RenderBase {
         this.drawCtx.strokeStyle = bh.extra.colour[i];
         this.drawCtx.stroke(bh.extra.path[i]);
       }
-      bh.extra.rotation += 0.01;
+      bh.extra.rotation += bh.extra.rotateSpeed;
     }
   }
 }

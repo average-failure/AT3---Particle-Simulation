@@ -330,6 +330,7 @@ export class BlackHole extends Environment {
     this.extra = {
       colour: [],
       rotation: 0,
+      rotateSpeed: (Math.random() - 0.5) / 10,
       path: [],
     };
 

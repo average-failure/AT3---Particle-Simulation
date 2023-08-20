@@ -26,6 +26,8 @@ class SimulationWorker extends SpatialHash {
     this.env = { FlowControl: [] };
     for (const o of Object.keys(OBJECTS)) this.env[o] = [];
 
+    this.ctx = new OffscreenCanvas(0, 0).getContext("2d", { alpha: false });
+
     this.methods = [
       "animate",
       "addCanvas",
@@ -224,15 +226,11 @@ class SimulationWorker extends SpatialHash {
 
     Object.assign(d1, particle);
 
+    const radius = ~~(d1.mass / this.settings.constants.mass_radius_ratio);
+
     const d2 = {
-      x: randRangeInt(
-        this.width - this.settings.radius(d1.mass),
-        this.settings.radius(d1.mass)
-      ),
-      y: randRangeInt(
-        this.height - this.settings.radius(d1.mass),
-        this.settings.radius(d1.mass)
-      ),
+      x: randRangeInt(this.width - radius, radius),
+      y: randRangeInt(this.height - radius, radius),
     };
 
     Object.assign(d2, d1);
@@ -271,8 +269,7 @@ class SimulationWorker extends SpatialHash {
     // Object.values(OBJECTS)[
     //   ~~(Math.random() * Object.keys(OBJECTS).length)
     // ];
-    if (type === "GravityWell" || type === "BlackHole")
-      params.ctx = this.envRenderer.drawCtx;
+    if (type === "GravityWell" || type === "BlackHole") params.ctx = this.ctx;
 
     return new SelectedClass(++this.oIds, settings, params);
   }

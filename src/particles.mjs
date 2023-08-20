@@ -1,6 +1,5 @@
 import { attract, repulse } from "./gravity_calculations.mjs";
 import { circleCollision, randRangeInt } from "./utils.mjs";
-import { Vector2 } from "./vectors.mjs";
 
 export class Particle {
   /**
@@ -22,7 +21,7 @@ export class Particle {
     this.settings = settings;
     this.mass =
       mass || randRangeInt(settings.constants.max_mass, settings.constants.min_mass);
-    this.r = settings.radius(this.mass);
+    this.r = ~~(this.mass / settings.constants.mass_radius_ratio);
     /* if ((this.r = settings.radius(this.mass)) > settings.constants.max_radius)
       this.r = settings.constants.max_radius;
     else if (this.r < settings.constants.min_radius)
