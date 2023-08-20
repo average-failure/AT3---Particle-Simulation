@@ -54,15 +54,14 @@ export class EnvironmentRenderer extends RenderBase {
       this.drawCtx.fillStyle = bh.fill;
       this.drawCtx.fill(bh.path);
 
-      this.drawCtx.rotate(bh.extra.rotation);
-
       this.drawCtx.lineWidth = 1;
       for (let i = 0, len = bh.extra.path.length; i < len; i++) {
-        this.drawCtx.rotate(bh.extra.rotation / 50);
+        this.updateView();
+        this.drawCtx.rotate(bh.extra.rotation[i]);
         this.drawCtx.strokeStyle = bh.extra.colour[i];
         this.drawCtx.stroke(bh.extra.path[i]);
+        bh.extra.rotation[i] += bh.extra.rotateSpeed[i];
       }
-      bh.extra.rotation += bh.extra.rotateSpeed;
     }
   }
 }

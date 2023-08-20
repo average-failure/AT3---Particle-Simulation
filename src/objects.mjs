@@ -329,8 +329,8 @@ export class BlackHole extends Environment {
 
     this.extra = {
       colour: [],
-      rotation: 0,
-      rotateSpeed: (Math.random() - 0.5) / 10,
+      rotation: [],
+      rotateSpeed: null,
       path: [],
     };
 
@@ -349,7 +349,10 @@ export class BlackHole extends Environment {
       );
       this.extra.path.push(path);
       this.extra.colour.push(randHex([149, 120, 56], 4));
+      this.extra.rotation.push((Math.random() - 0.5) / 10);
     }
+
+    this.extra.rotateSpeed = this.extra.rotation.slice();
   }
 
   #genFill(ctx) {

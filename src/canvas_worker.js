@@ -28,21 +28,7 @@ class SimulationWorker extends SpatialHash {
 
     this.ctx = new OffscreenCanvas(0, 0).getContext("2d", { alpha: false });
 
-    this.methods = [
-      "animate",
-      "addCanvas",
-      "newParticle",
-      "mouseCollision",
-      "resizeCanvas",
-      "updateVariable",
-      "updateToggle",
-      "newObject",
-      "flow",
-      "onButton",
-      "toggleWell",
-      "pause",
-      "resume",
-    ];
+    this.methods = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
 
     this.availableParticles = {
       Particle: null,
