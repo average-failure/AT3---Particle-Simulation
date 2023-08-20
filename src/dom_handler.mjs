@@ -1,12 +1,20 @@
-import { createCheckbox, createSelect, createSlider, createButton } from "./utils.mjs";
+import {
+  createCheckbox,
+  createSelect,
+  createSlider,
+  createButton,
+  FPS,
+} from "./utils.mjs";
 import { settings } from "./settings.mjs";
 
 export class DOMHandler {
   constructor() {
     this.domElements = {
       stats: {
-        particleCount: document.querySelector("#stats > #particleCount"),
-        objectCount: document.querySelector("#stats > #objectCount"),
+        particleCount: document.querySelector("#stats #particleCount"),
+        objectCount: document.querySelector("#stats #objectCount"),
+        mainFps: document.querySelector("#stats #mfps"),
+        workerFps: document.querySelector("#stats #wfps"),
       },
       sliders: {},
       toggles: {},
@@ -14,10 +22,10 @@ export class DOMHandler {
       buttons: {},
       pause: document.getElementById("pause"),
     };
-    this.particleCount = 0;
-    this.objectCount = 0;
 
     this.paused = false;
+
+    (this.fps = new FPS(this.domElements.stats.mainFps)).start();
 
     this.#initDOMElements();
   }
@@ -177,6 +185,8 @@ export class DOMHandler {
       this.mouseDown2 = true;
     }
 
+    this.fps.stop();
+
     this.domElements.pause.style.pointerEvents = "all";
     this.domElements.pause.style.opacity = 1;
 
@@ -190,6 +200,8 @@ export class DOMHandler {
     this.paused = false;
     if (this.mouseDown2 === true) this.mouseDown = true;
     if (this.mouseEvent === "multi") this.multi();
+
+    this.fps.start();
 
     this.domElements.pause.style.pointerEvents = "none";
     this.domElements.pause.style.opacity = 0;
@@ -207,18 +219,19 @@ export class DOMHandler {
       pre2 = [],
       points = [],
       c = [];
-    const multiRadius = 80;
-    let t = false;
+    const multiRadius = 80,
+      speed = 1;
+    let count = 0;
 
     DOMHandler.prototype.multi = () => {
-      if (this.mouseDown === true) requestAnimationFrame(this.multi);
-      if ((t = !t)) return;
+      if (this.mouseDown !== true || count++ % speed !== 0) return;
       const angle = Math.random() * 2 * Math.PI,
         hyp = Math.sqrt(Math.random()) * (multiRadius - settings.constants.max_radius);
       this.newParticle(
         { x: c[0] + Math.cos(angle) * hyp, y: c[1] + Math.sin(angle) * hyp },
         this.domElements.dropdowns.particle_type.value
       );
+      requestAnimationFrame(this.multi);
     };
 
     /**
@@ -231,7 +244,7 @@ export class DOMHandler {
       return [event.clientX - bounds.left, event.clientY - bounds.top];
     };
 
-    DOMHandler.prototype.mousedown = (event) => {
+    const mousedown = (event) => {
       event.preventDefault();
 
       if (this.mouseDown === true) return;
@@ -258,6 +271,7 @@ export class DOMHandler {
           c[0] = m[0];
           c[1] = m[1];
           this.mouseEvent = "multi";
+          count = 0;
           this.multi();
           this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
           this.ctx.beginPath();
@@ -273,7 +287,7 @@ export class DOMHandler {
       }
     };
 
-    DOMHandler.prototype.mousemove = (event) => {
+    const mousemove = (event) => {
       if (!(this.mouseDown === true)) return;
 
       m = getMousePos(event);
@@ -344,7 +358,7 @@ export class DOMHandler {
       }
     };
 
-    DOMHandler.prototype.mouseup = (event) => {
+    const mouseup = (event) => {
       if (this.mouseDown !== true) return;
 
       m = getMousePos(event);
@@ -423,10 +437,10 @@ export class DOMHandler {
       this.mouseEvent = null;
     };
 
-    this.canvas.addEventListener("mousedown", this.mousedown);
+    this.canvas.addEventListener("mousedown", mousedown);
 
-    this.canvas.addEventListener("mousemove", this.mousemove);
+    this.canvas.addEventListener("mousemove", mousemove);
 
-    this.canvas.addEventListener("mouseup", this.mouseup);
+    this.canvas.addEventListener("mouseup", mouseup);
   }
 }

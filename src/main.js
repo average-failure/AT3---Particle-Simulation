@@ -8,12 +8,38 @@ class SimulationMain extends DOMHandler {
 
     this.onResize();
     addEventListener("resize", this.onResize.bind(this));
+
+    this.methods = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
+  }
+
+  /**
+   * Handles the response to receiving messages from the worker thread
+   * @param {MessageEvent} param0 A message event sent from the worker
+   */
+  #onMessage({ data: message }) {
+    for (const method of this.methods.filter((method) =>
+      Object.keys(message).includes(method)
+    ))
+      this[method](message[method]);
+  }
+
+  updateParticleCount(count) {
+    this.domElements.stats.particleCount.textContent = count;
+  }
+
+  updateObjectCount(count) {
+    this.domElements.stats.objectCount.textContent = count;
+  }
+
+  updateFps(fps) {
+    this.domElements.stats.workerFps.textContent = fps;
   }
 
   #initWorker() {
     this.initCanvas();
 
     this.worker = new Worker("src/canvas_worker.js", { type: "module" });
+    this.worker.onmessage = this.#onMessage.bind(this);
 
     if (!this.canvas.transferControlToOffscreen) {
       alert("Your browser does not support offscreenCanvas");
@@ -45,12 +71,10 @@ class SimulationMain extends DOMHandler {
 
   newParticle(particle, type) {
     this.messageWorker({ newParticle: [particle, type] });
-    this.domElements.stats.particleCount.textContent = ++this.particleCount;
   }
 
   newObject(object, type) {
     this.messageWorker({ newObject: [object, type] });
-    this.domElements.stats.objectCount.textContent = ++this.objectCount;
   }
 }
 

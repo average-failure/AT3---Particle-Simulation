@@ -2,7 +2,7 @@ import * as PARTICLES from "./particles.mjs";
 import * as OBJECTS from "./objects.mjs";
 import { FlowControl } from "./flow_control.mjs";
 import { Environment } from "./environment.mjs";
-import { randRangeInt } from "./utils.mjs";
+import { FPS, randRangeInt } from "./utils.mjs";
 import { SpatialHash } from "./spatial_hash.mjs";
 import { settings } from "./settings.mjs";
 import { Renderer } from "./renderer.mjs";
@@ -17,6 +17,14 @@ class SimulationWorker extends SpatialHash {
     super(settings);
 
     onmessage = this.#onMessage.bind(this);
+
+    (this.fps = new FPS()).start(
+      10,
+      10,
+      function (fps) {
+        postMessage({ updateFps: fps });
+      }.bind(this)
+    );
 
     this.pIds = this.oIds = -1;
     this.particles = [];
@@ -99,7 +107,7 @@ class SimulationWorker extends SpatialHash {
     for (const method of this.methods.filter((method) =>
       Object.keys(message).includes(method)
     ))
-      this[method]?.(message[method]);
+      this[method](message[method]);
   }
 
   /**
@@ -175,11 +183,21 @@ class SimulationWorker extends SpatialHash {
 
   pause() {
     this.settings.pause = true;
+
+    this.fps.stop();
   }
 
   resume() {
     this.settings.pause = false;
     this.animate();
+
+    this.fps.start(
+      10,
+      10,
+      function (fps) {
+        postMessage({ updateFps: fps });
+      }.bind(this)
+    );
   }
 
   /**
@@ -229,6 +247,8 @@ class SimulationWorker extends SpatialHash {
     this.newClient(p);
     this.particles.push(p);
 
+    postMessage({ updateParticleCount: this.particles.length });
+
     return p;
   }
 
@@ -241,6 +261,7 @@ class SimulationWorker extends SpatialHash {
     particle.dispose();
     const index = this.particles.indexOf(particle);
     if (index > -1) this.particles.splice(index, 1);
+    postMessage({ updateParticleCount: this.particles.length });
   }
 
   /**
@@ -282,6 +303,8 @@ class SimulationWorker extends SpatialHash {
     this.env[o.getClassName()].push(o);
 
     this.envRenderer.render(this.env);
+
+    postMessage({ updateObjectCount: Object.values(this.env).flat().length });
 
     return o;
   }

@@ -459,3 +459,33 @@ export const circleCollision = (c1, c2, mode, cor) => {
 
   return { nvx, nvy, speed };
 };
+
+export class FPS {
+  constructor(outputElement) {
+    this.output = outputElement || {};
+  }
+
+  start(filter = 10, updateSpeed = 10, callback = () => {}) {
+    let then = performance.now(),
+      frameTime = 0,
+      count = 0;
+    this.stopped = false;
+    this.loop(filter, updateSpeed, then, frameTime, count, callback);
+  }
+
+  stop() {
+    this.stopped = true;
+  }
+
+  loop(filter, updateSpeed, then, frameTime, count, callback) {
+    const now = performance.now();
+    frameTime += (now - then - frameTime) / filter;
+    then = now;
+    if (count++ % updateSpeed === 0)
+      callback((this.output.textContent = (1000 / frameTime).toFixed(1)));
+    if (this.stopped === true) return;
+    requestAnimationFrame(() => {
+      this.loop(filter, updateSpeed, then, frameTime, count, callback);
+    });
+  }
+}
