@@ -1,4 +1,5 @@
 import { RenderBase } from "./render_base.mjs";
+import { complementaryHSLColour } from "./utils.mjs";
 
 export class Renderer extends RenderBase {
   constructor(canvas, settings) {
@@ -10,7 +11,16 @@ export class Renderer extends RenderBase {
       this.translate(p.x, p.y);
 
       this.drawCtx.fillStyle = p.colour;
-      this.drawCtx.fill(p.path);
+      this.drawCtx.beginPath();
+      this.drawCtx.arc(0, 0, p.r, 0, Math.PI * 2);
+      this.drawCtx.fill();
+
+      if (typeof p.extra === "function") p.extra(this.drawCtx);
+      else if (this.settings.toggles.show_mass && p.r > 5) {
+        this.drawCtx.fillStyle = complementaryHSLColour(p.colour);
+        this.drawCtx.font = `${p.r}px sans-serif`;
+        this.drawCtx.fillText(p.mass, 0, 0);
+      }
 
       if (!this.settings.toggles.show_velocity) continue;
 

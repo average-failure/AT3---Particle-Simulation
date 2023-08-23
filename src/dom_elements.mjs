@@ -76,6 +76,7 @@ export const toggles = {
     { coefficient_of_restitution: { value: t.coefficient_of_restitution, name: "COR" } },
     { drag: { value: t.drag, name: "Drag" } },
     { show_velocity: { value: t.show_velocity, name: "Velocity" } },
+    { show_mass: { value: t.show_mass, name: "Show Mass" } },
     {
       softening_constant: { value: t.softening_constant, name: "Softening Constant" },
     },

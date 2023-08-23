@@ -1,3 +1,15 @@
+# ------------------------ Todo ------------------------ #
+
 ✅ make black holes spin (laggy tho because of many strokes)
 
 ❌ make radial menu for tool selection
+
+❌ add lifespan for particles and objects
+
+❌ add cancel object creation
+
+# ------------------------ Maybe ------------------------ #
+
+❌ fill screen with random
+
+❌ mass particle creation (fill random position with given amount of particles)

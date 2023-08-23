@@ -1,7 +1,7 @@
 export const settings = {
   constants: {
     cell_size: 15, // * need to find what is the optimal cell size
-    max_radius: 20,
+    max_radius: 100,
     min_radius: 3,
     get max_mass() {
       delete this.max_mass;
@@ -40,6 +40,7 @@ export const settings = {
     coefficient_of_restitution: true,
     drag: false,
     show_velocity: false,
+    show_mass: true,
     animated_environment: false,
   },
   pause: false,

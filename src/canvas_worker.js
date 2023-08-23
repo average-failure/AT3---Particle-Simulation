@@ -39,7 +39,7 @@ class SimulationWorker extends SpatialHash {
     this.methods = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
 
     this.availableParticles = {
-      Particle: null,
+      Particle: () => {},
       AttractorParticle: (particle) => [
         this.findNearParticles(
           particle,
@@ -63,6 +63,9 @@ class SimulationWorker extends SpatialHash {
                 this.settings.variables.repulsion_radius) /
                 2)
         ),
+      ],
+      MergeParticle: (particle) => [
+        this.findNearParticles(particle, particle.r + this.settings.constants.max_radius),
       ],
     };
 
@@ -189,15 +192,11 @@ class SimulationWorker extends SpatialHash {
 
   resume() {
     this.settings.pause = false;
-    this.animate();
+    if (this.running !== true) this.animate();
 
-    this.fps.start(
-      10,
-      10,
-      function (fps) {
-        postMessage({ updateFps: fps });
-      }.bind(this)
-    );
+    this.fps.start(10, 10, (fps) => {
+      postMessage({ updateFps: fps });
+    });
   }
 
   /**
@@ -223,7 +222,7 @@ class SimulationWorker extends SpatialHash {
   newParticle([particle, type]) {
     const d1 = {
       mass: randRangeInt(
-        this.settings.constants.max_mass,
+        this.settings.constants.max_mass / 5,
         this.settings.constants.min_mass
       ),
     };
@@ -317,45 +316,83 @@ class SimulationWorker extends SpatialHash {
     return this.findNear(p, r).filter((n) => n instanceof Environment);
   }
 
-  splitParticle(p) {
+  splitParticle(p, blackHole) {
+    let r = p.mass * 0.95;
+
     const masses = [],
       min = this.settings.constants.min_mass,
-      parts = ~~(p.mass / 25 + (Math.random() - 0.5) * 2) + 1,
-      m = p.mass - min * parts,
+      parts = Math.min(
+        ~~((r / Math.sqrt(r)) * (Math.random() * 0.5 + 0.5)) + 2,
+        Math.max(r / (min * 2), 2)
+      ),
+      m = r - min * parts,
       c = ~~(m / parts),
       d = c * 0.3;
-    let r = p.mass;
 
     for (let i = 0; i < parts; i++) {
       if (r < min) break;
       const offset = ~~((Math.random() - 0.5) * 2 * d);
-      // const p = Math.max(c + offset + min, min);
       const p = c + offset + min;
       masses.push(p);
       r -= p;
     }
 
     for (const mass of masses) {
-      const angle = Math.random() - 0.5,
+      const angle = (Math.random() - 0.5) * Math.min(parts / 10, Math.PI),
         cos = Math.cos(angle),
         sin = Math.sin(angle);
-      const newP = this.newParticle([
-        {
-          x: p.x + (Math.random() - 0.5) * 5,
-          y: p.y + (Math.random() - 0.5) * 5,
+      this.newParticle([
+        Object.assign({}, p, {
+          x: p.x + (Math.random() - 0.5) * parts,
+          y: p.y + (Math.random() - 0.5) * parts,
           vx: p.vx * cos - p.vy * sin,
           vy: p.vx * sin + p.vy * cos,
           mass,
-          immortal: true,
-        },
+          radius: blackHole ? 1 : null,
+          immortal: 30 * (Math.random() * 2 + 0.5),
+        }),
         p.getClassName(),
       ]);
-      setTimeout(() => {
-        newP.immortal = false;
-      }, 500);
     }
 
     this.deleteParticle(p);
+  }
+
+  mergeParticles(mode, ...particles) {
+    const max = particles.reduce((prev, curr) => (prev.mass > curr.mass ? prev : curr));
+
+    const massSum = particles.reduce((sum, { mass }) => sum + mass, 0);
+
+    let mass = max.mass,
+      vx = max.vx * (max.mass / massSum),
+      vy = max.vy * (max.mass / massSum);
+
+    mode = mode ? Math.sign(mode) : 1;
+
+    for (const p of particles) {
+      if (p === max) continue;
+      mass += p.mass * mode;
+      vx += p.vx * (p.mass / massSum);
+      vy += p.vy * (p.mass / massSum);
+    }
+
+    vx /= particles.length;
+    vy /= particles.length;
+
+    mass = mass >= 30 ? mass : 30;
+
+    this.newParticle([
+      Object.assign({}, max, {
+        vx,
+        vy,
+        mass,
+        immortal:
+          particles.reduce((sum, { immortal }) => sum + immortal, 0) / particles.length,
+      }),
+      max.getClassName(),
+    ]);
+
+    for (const p of particles) this.deleteParticle(p);
   }
 
   // /**
@@ -400,17 +437,29 @@ class SimulationWorker extends SpatialHash {
   #calculations(particle) {
     this.removeClient(particle);
 
-    particle.update(
+    const returnValue = particle.update(
       this.width,
       this.height,
-      this.availableParticles[particle.getClassName()]?.(particle)
+      this.availableParticles[particle.getClassName()](particle)
     );
 
-    for (const near of this.findNearParticles(
-      particle,
-      particle.r + this.settings.constants.max_radius
-    ))
-      particle.detectCollision(near);
+    switch (returnValue?.type) {
+      case "merge":
+        if (returnValue.merge?.length)
+          this.mergeParticles(1, particle, ...returnValue.merge);
+        break;
+      default:
+        break;
+    }
+
+    if (particle.collision <= 0) {
+      for (const near of this.findNearParticles(
+        particle,
+        particle.r + this.settings.constants.max_radius
+      ).filter((p) => p.collision <= 0)) {
+        particle.detectCollision(near);
+      }
+    }
 
     // for (const near of this.findNearParticles(
     //   particle,
@@ -423,12 +472,13 @@ class SimulationWorker extends SpatialHash {
 
   #envCalculations(object) {
     const returnValue = object.update?.(
-      this.availableObjects[object.getClassName()]?.(object)
+      this.availableObjects[object.getClassName()](object)
     );
+
     if (returnValue instanceof Array && returnValue.length)
       for (const r of returnValue) {
         if (r.mass <= this.settings.constants.min_mass) this.deleteParticle(r);
-        else this.splitParticle(r);
+        else this.splitParticle(r, true);
       }
 
     for (const flow of this.env.FlowControl) {
@@ -447,6 +497,8 @@ class SimulationWorker extends SpatialHash {
    * The main animation loop
    */
   animate() {
+    this.running = true;
+
     for (const p of this.particles) this.#calculations(p);
 
     for (const o of Object.values(this.env).flat()) this.#envCalculations(o);
@@ -455,7 +507,10 @@ class SimulationWorker extends SpatialHash {
     if (this.settings.toggles.animated_environment === true)
       this.envRenderer.render(this.env);
 
-    if (this.settings.pause === true) return;
+    if (this.settings.pause === true) {
+      this.running = false;
+      return;
+    }
 
     requestAnimationFrame(this.animate.bind(this));
   }

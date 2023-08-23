@@ -1,5 +1,5 @@
 import { attract, repulse } from "./gravity_calculations.mjs";
-import { circleCollision, randRangeInt } from "./utils.mjs";
+import { circleCollision, detectCircleCollision, randRangeInt } from "./utils.mjs";
 
 export class Particle {
   /**
@@ -8,7 +8,7 @@ export class Particle {
    * @param {settings} settings The simulation settings
    * @param {Object} param2 The parameters of the particle
    */
-  constructor(id, settings, { x, y, vx, vy, mass, immortal }) {
+  constructor(id, settings, { x, y, vx, vy, mass, radius, immortal, collision }) {
     if (!Number.isInteger(id)) throw "Error: Id not provided.";
     if (!(Number.isFinite(x) && Number.isFinite(y)))
       throw "Error: Position not provided.";
@@ -20,16 +20,17 @@ export class Particle {
     this.vy = vy || 0;
     this.settings = settings;
     this.mass =
-      mass || randRangeInt(settings.constants.max_mass, settings.constants.min_mass);
-    this.r = ~~(this.mass / settings.constants.mass_radius_ratio);
-    /* if ((this.r = settings.radius(this.mass)) > settings.constants.max_radius)
-      this.r = settings.constants.max_radius;
-    else if (this.r < settings.constants.min_radius)
-      this.r = settings.constants.min_radius; */
+      mass || randRangeInt(settings.constants.max_mass / 4, settings.constants.min_mass);
+    this.r = Math.min(
+      Math.max(
+        Math.ceil(radius || this.mass / settings.constants.mass_radius_ratio),
+        settings.constants.min_radius
+      ),
+      settings.constants.max_radius
+    );
 
-    this.immortal = immortal || false;
-
-    (this.path = new Path2D()).arc(0, 0, this.r, 0, Math.PI * 2);
+    this.collision = collision || 0;
+    this.immortal = immortal || 0;
   }
 
   static getClassName() {
@@ -143,6 +144,8 @@ export class Particle {
   // }
 
   detectCollision(p) {
+    if (this.collision > 0 || p.collision > 0) return;
+
     const collision = circleCollision(
       this,
       p,
@@ -151,6 +154,7 @@ export class Particle {
         ? this.settings.variables.coefficient_of_restitution
         : 1
     );
+
     if (collision !== false) {
       // Calculate the impulse of the collision
       const impulse = (2 * collision.speed) / (this.mass + p.mass);
@@ -200,6 +204,8 @@ export class Particle {
       this.vy *= this.settings.variables.drag;
     }
 
+    if (this.getClassName() !== "Particle") return;
+
     this.updateColour();
   }
 
@@ -211,6 +217,8 @@ export class Particle {
   updateCalculations(width, height) {
     this.#checkBoundaries(width, height);
     this.#updateVelocity();
+    if (this.immortal > 0) this.immortal--;
+    if (this.collision > 0) this.collision--;
   }
 
   update(width, height) {
@@ -228,7 +236,7 @@ export class AttractorParticle extends Particle {
     super(id, settings, params);
 
     this.strength = params.strength || 100;
-    this.colour = "#6060ff";
+    this.colour = "hsl(240,100%,69%)";
   }
 
   static getClassName() {
@@ -242,8 +250,6 @@ export class AttractorParticle extends Particle {
   #attract(p) {
     attract(this, p, this.settings);
   }
-
-  updateColour() {}
 
   updateCalculations(width, height, near) {
     super.updateCalculations(width, height);
@@ -263,7 +269,7 @@ export class RepulserParticle extends Particle {
     super(id, settings, params);
 
     this.strength = params.strength || 100;
-    this.colour = "#ff6060";
+    this.colour = "hsl(0,100%,69%)";
   }
 
   static getClassName() {
@@ -277,8 +283,6 @@ export class RepulserParticle extends Particle {
   #repulse(p) {
     repulse(this, p, this.settings);
   }
-
-  updateColour() {}
 
   updateCalculations(width, height, near) {
     super.updateCalculations(width, height);
@@ -299,7 +303,7 @@ export class ChargedParticle extends Particle {
 
     this.strength = params.strength || 100;
     this.charge = params.charge || [-1, 1][~~(Math.random() * 2)];
-    this.colour = this.charge > 0 ? "#ff1010" : "#1010ff";
+    this.colour = `hsl(${this.charge > 0 ? 0 : 240},100%,53%)`;
   }
 
   static getClassName() {
@@ -318,8 +322,6 @@ export class ChargedParticle extends Particle {
     repulse(this, p, this.settings);
   }
 
-  updateColour() {}
-
   updateCalculations(width, height, near) {
     super.updateCalculations(width, height);
 
@@ -334,5 +336,54 @@ export class ChargedParticle extends Particle {
     this.updateCalculations(width, height, near);
 
     this.updatePosition();
+  }
+}
+
+export class MergeParticle extends Particle {
+  constructor(id, settings, params) {
+    super(id, settings, params);
+
+    this.colour = `hsl(120,${~~Math.min(15 + this.mass / 50, 100)}%,${~~Math.max(
+      80 - this.mass / 50,
+      15
+    )}%)`; // TODO: Maybe change the environment extra to function as well
+    // TODO: display mass on particle (make a toggle for)
+  }
+
+  static getClassName() {
+    return "MergeParticle";
+  }
+
+  getClassName() {
+    return MergeParticle.getClassName();
+  }
+
+  detectCollision(p) {
+    if (p instanceof MergeParticle && this.immortal <= 0) return;
+    super.detectCollision(p);
+  }
+
+  updateCalculations(width, height, near) {
+    super.updateCalculations(width, height);
+
+    if (this.immortal > 0) return;
+
+    const merge = [];
+
+    for (const p of near) {
+      if (p instanceof MergeParticle && detectCircleCollision(this, p, true)) {
+        merge.push(p);
+      }
+    }
+
+    return merge;
+  }
+
+  update(width, height, [near]) {
+    const merge = this.updateCalculations(width, height, near);
+
+    this.updatePosition();
+
+    return { type: "merge", merge };
   }
 }

@@ -33,16 +33,7 @@ export class EnvironmentRenderer extends RenderBase {
       this.drawCtx.fillStyle = o.fill || "#AAAAAAF0";
       this.drawCtx.fill(o.path);
 
-      if (o.hasOwnProperty("extra")) {
-        if (o.extra.hasOwnProperty("width")) this.drawCtx.lineWidth = o.extra.width;
-        this.drawCtx[o.extra.mode + "Style"] = o.extra.colour;
-        if (o.extra.path instanceof Array)
-          for (let i = 0, len = o.extra.path.length; i < len; i++) {
-            this.drawCtx[o.extra.mode + "Style"] = o.extra.colour[i];
-            this.drawCtx[o.extra.mode](o.extra.path[i]);
-          }
-        else this.drawCtx[o.extra.mode](o.extra.path);
-      }
+      if (typeof o.extra === "function") o.extra(this.drawCtx);
     }
 
     this.drawBlackHoles(objects.BlackHole);

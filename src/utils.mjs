@@ -4,6 +4,7 @@
  * @param {Number} mixEffect How much the provided mix affects the random colour
  * @returns An random colour in RGB format
  */
+// * UNUSED
 const randColour = (mix, mixEffect = 2) => {
   const colour = [randInt(256), randInt(256), randInt(256)];
 
@@ -25,6 +26,7 @@ const randColour = (mix, mixEffect = 2) => {
  * @param {Number} mixEffect How much the provided mix affects the random colour
  * @returns An random colour in hexadecimal format
  */
+// * UNUSED
 export const randHex = (mix, mixEffect) => {
   const colour = randColour(mix, mixEffect);
 
@@ -39,6 +41,7 @@ export const randHex = (mix, mixEffect) => {
  * @param {Number} mixEffect How much the provided mix affects the random colour
  * @returns An random colour in css rgb format
  */
+// * UNUSED
 export const randRGB = (mix, mixEffect) => {
   const colour = randColour(mix, mixEffect);
 
@@ -51,6 +54,7 @@ export const randRGB = (mix, mixEffect) => {
  * @param {Number} mixEffect How much the provided mix affects the random colour
  * @returns An random colour in hsl format
  */
+// * UNUSED
 export const randHSL = (mix, mixEffect) => {
   const colour = randColour(mix, mixEffect);
 
@@ -104,6 +108,7 @@ export const randHSL = (mix, mixEffect) => {
  * @param {Number} offset The amount to offset the random number by
  * @returns A random integer
  */
+// * UNUSED
 export const randInt = (max, offset = 0) => ~~(Math.random() * max) + offset;
 
 /**
@@ -121,6 +126,7 @@ export const randRangeInt = (max, min = 0) => ~~(Math.random() * (max - min) + m
  * @param {Number} round The number of decimals to round to
  * @returns A random number rounded to round between max and min
  */
+// * UNUSED
 export const randRange = (max, min = 0, round) =>
   Number((Math.random() * (max - min) + min).toFixed(round));
 
@@ -148,6 +154,7 @@ export const randBias = (max, min = 0, bias = 0, strength = 1, round) => {
  * @param {Number} strength The strength of the bias
  * @returns A random integer biased towards the provided bias
  */
+// * UNUSED
 export const randBiasInt = (max, min = 0, bias = 0, strength = 1) => {
   const mix = Math.random() * strength;
   return ~~((Math.random() * (max - min) + min) * (1 - mix) + bias * mix);
@@ -167,6 +174,9 @@ export const randCircle = (x, y, maxR, minR = 0) => {
   return [x + Math.cos(angle) * hyp, y + Math.sin(angle) * hyp];
 };
 
+// * UNUSED
+export const randBool = () => Math.random() < 0.5;
+
 /**
  * Returns a promise that resolves on an event
  * @param {EventTarget} item The item to attach the event listener to
@@ -175,6 +185,7 @@ export const randCircle = (x, y, maxR, minR = 0) => {
  */
 // Get a Promise from an event...
 // Claude @ https://stackoverflow.com/a/70789108
+// * UNUSED
 export const getPromiseFromEvent = (item, event) =>
   new Promise((resolve) => {
     const listener = () => {
@@ -191,6 +202,7 @@ export const getPromiseFromEvent = (item, event) =>
  */
 // Waits for conditionFunction to be true
 // Lightbeard @ https://stackoverflow.com/a/52652681
+// * UNUSED
 export const waitFor = (conditionFunction) => {
   const poll = (resolve) => {
     if (conditionFunction()) resolve();
@@ -198,38 +210,6 @@ export const waitFor = (conditionFunction) => {
   };
 
   return new Promise(poll);
-};
-
-/**
- * Fades a given element in or out
- * @param {Element} element The element to fade in or out
- * @param {String} type Either in or out
- */
-export const fadeInOut = (element, type) => {
-  const cStyle = getComputedStyle(element),
-    style = element.style;
-  let count;
-  if (type === "in" && cStyle.visibility === "hidden") {
-    count = 0;
-    style.visibility = "visible";
-    const fadeIn = () => {
-      style.opacity = count;
-      count += 0.1;
-      if (count < 1) requestAnimationFrame(fadeIn);
-    };
-    requestAnimationFrame(fadeIn);
-  } else if (type === "out" && cStyle.visibility === "visible") {
-    count = 1;
-    let fadeDone;
-    const fadeOut = () => {
-      style.opacity = count;
-      count -= 0.1;
-      if (count > 0) requestAnimationFrame(fadeOut);
-      else fadeDone = true;
-    };
-    requestAnimationFrame(fadeOut);
-    waitFor(() => fadeDone).then(() => (style.visibility = "hidden"));
-  }
 };
 
 /**
@@ -410,10 +390,20 @@ export const initRectShape = (x, y, w, h) => {
   return { x, y, w, h, measurements: new Int16Array([w / 2, h / 2]) };
 };
 
+export const detectCircleCollision = (c1, c2, envelop) => {
+  const dx = c1.x - c2.x,
+    dy = c1.y - c2.y;
+  const dSq = dx * dx + dy * dy;
+
+  const r = envelop ? c1.r : c1.r + c2.r;
+
+  return dSq <= r * r;
+};
+
 export const circleCollision = (c1, c2, mode, cor) => {
   const dx = c1.x - c2.x,
     dy = c1.y - c2.y;
-  const dSq = dx ** 2 + dy ** 2;
+  const dSq = dx * dx + dy * dy;
 
   const r = c1.r + c2.r;
 
@@ -489,3 +479,81 @@ export class FPS {
     });
   }
 }
+
+// * UNUSED
+export const complementaryHexColour = (hex) => {
+  // Deekshant Kumar @ https://stackoverflow.com/a/67425060
+
+  let r = hex.length == 4 ? parseInt(hex[1] + hex[1], 16) : parseInt(hex.slice(1, 3), 16);
+  let g = hex.length == 4 ? parseInt(hex[2] + hex[2], 16) : parseInt(hex.slice(3, 5), 16);
+  let b = hex.length == 4 ? parseInt(hex[3] + hex[3], 16) : parseInt(hex.slice(5), 16);
+
+  [r, g, b] = complementaryRGBColour(r, g, b);
+
+  return (
+    "#" +
+    (r < 16 ? "0" + r.toString(16) : r.toString(16)) +
+    (g < 16 ? "0" + g.toString(16) : g.toString(16)) +
+    (b < 16 ? "0" + b.toString(16) : b.toString(16))
+  );
+};
+
+// * UNUSED
+export const complementaryRGBColour = (r, g, b) => {
+  // Deekshant Kumar @ https://stackoverflow.com/a/67425060
+
+  if (Math.max(r, g, b) == Math.min(r, g, b)) {
+    return [255 - r, 255 - g, 255 - b];
+  } else {
+    (r /= 255), (g /= 255), (b /= 255);
+    const max = Math.max(r, g, b),
+      min = Math.min(r, g, b),
+      d = max - min;
+    let h,
+      l = (max + min) / 2,
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+
+    h = Math.round(h * 60 + 180) % 360;
+    h /= 360;
+
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+  }
+};
+
+export const complementaryHSLColour = (h, s, l) => {
+  if (typeof h === "string")
+    [h, s, l] = h.substring(4).split(")")[0].split(",").map(parseFloat);
+
+  h += 180;
+  if (h > 360) h -= 360;
+
+  return `hsl(${h},${s}%,${100 - l}%)`;
+};
