@@ -1,6 +1,4 @@
-import * as PARTICLES from "./particles.mjs";
-import * as OBJECTS from "./objects.mjs";
-import { settings } from "./settings.mjs";
+import { settings } from "./settings";
 
 const { variables: v, toggles: t } = settings;
 
@@ -87,39 +85,4 @@ export const toggles = {
       },
     },
   ],
-};
-
-export const dropdowns = {
-  mouse_mode: {
-    name: "Mouse Mode",
-    children: ["New Particle", "New Object", "Multi Particle", "Change Well Force"],
-  },
-  particle_type: {
-    name: "Particle Type",
-    children: ["Random", ...Object.keys(PARTICLES)],
-    value: "Particle",
-  },
-  object_type: {
-    name: "Object Type",
-    children: [...Object.keys(OBJECTS), "FlowControl"],
-    value: "Rectangle",
-  },
-};
-
-export const buttons = {
-  reset: {
-    content: "Reset Simulation",
-    callback: function () {
-      for (const element of ["particleCount", "objectCount"]) {
-        this[element] = 0;
-        this.domElements.stats[element].textContent = 0;
-      }
-    },
-  },
-  pause: {
-    content: "Pause Simulation",
-    callback: function () {
-      this.pause();
-    },
-  },
 };

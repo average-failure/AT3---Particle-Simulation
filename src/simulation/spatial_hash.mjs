@@ -1,5 +1,3 @@
-import { Particle } from "./particles.mjs";
-
 export class SpatialHash {
   /**
    * A spatial hash that allows for finding neighbours to increase performance

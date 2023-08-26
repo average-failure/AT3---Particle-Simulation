@@ -1,5 +1,5 @@
-import { FlowControl } from "./flow_control.mjs";
-import { RenderBase } from "./render_base.mjs";
+import { FlowControl } from "../bodies";
+import { RenderBase } from "./render_base";
 
 export class EnvironmentRenderer extends RenderBase {
   constructor(canvas, settings) {

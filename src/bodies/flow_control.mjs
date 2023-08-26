@@ -1,4 +1,4 @@
-import { Environment } from "./environment.mjs";
+import { Environment } from "./environment";
 
 export class FlowControl extends Environment {
   constructor(settings, params) {

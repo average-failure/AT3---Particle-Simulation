@@ -2,11 +2,19 @@
 
 ✅ make black holes spin (laggy tho because of many strokes)
 
-❌ make radial menu for tool selection
+✅ make radial menu for tool selection
 
 ❌ add lifespan for particles and objects
 
 ❌ add cancel object creation
+
+❌ fix fast moving collisions
+
+❌ fix collision teleportation
+
+❌ rotate text in radial menu properly
+
+❌ finish rest of ui
 
 # ------------------------ Maybe ------------------------ #
 

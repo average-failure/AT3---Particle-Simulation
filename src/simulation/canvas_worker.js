@@ -1,12 +1,8 @@
-import * as PARTICLES from "./particles.mjs";
-import * as OBJECTS from "./objects.mjs";
-import { FlowControl } from "./flow_control.mjs";
-import { Environment } from "./environment.mjs";
-import { FPS, randRangeInt } from "./utils.mjs";
-import { SpatialHash } from "./spatial_hash.mjs";
-import { settings } from "./settings.mjs";
-import { Renderer } from "./renderer.mjs";
-import { EnvironmentRenderer } from "./environment_renderer.mjs";
+import { PARTICLES, OBJECTS, FlowControl, Environment } from "../bodies";
+import { FPS, randRangeInt } from "../utils";
+import { SpatialHash } from "./spatial_hash";
+import { settings } from "../settings";
+import { Renderer, EnvironmentRenderer } from "../renderers";
 
 class SimulationWorker extends SpatialHash {
   /**
@@ -40,21 +36,19 @@ class SimulationWorker extends SpatialHash {
 
     this.availableParticles = {
       Particle: () => {},
-      AttractorParticle: (particle) => [
+      AttractorParticle: (particle) =>
         this.findNearParticles(
           particle,
           this.settings.constants.max_radius +
             particle.strength * this.settings.variables.attraction_radius
         ),
-      ],
-      RepulserParticle: (particle) => [
+      RepulserParticle: (particle) =>
         this.findNearParticles(
           particle,
           this.settings.constants.max_radius +
             particle.strength * this.settings.variables.repulsion_radius
         ),
-      ],
-      ChargedParticle: (particle) => [
+      ChargedParticle: (particle) =>
         this.findNearParticles(
           particle,
           this.settings.constants.max_radius +
@@ -63,42 +57,36 @@ class SimulationWorker extends SpatialHash {
                 this.settings.variables.repulsion_radius) /
                 2)
         ),
-      ],
-      MergeParticle: (particle) => [
+      MergeParticle: (particle) =>
         this.findNearParticles(particle, particle.r + this.settings.constants.max_radius),
-      ],
     };
 
     this.availableObjects = {
-      Rectangle: (object) => [
+      Rectangle: (object) =>
         this.findNearParticles(
           { x: object.x + object.w / 2, y: object.y + object.h / 2 },
           Math.sqrt(object.measurements[0] ** 2 + object.measurements[1] ** 2) +
             this.settings.constants.max_radius
         ),
-      ],
-      Circle: (object) => [
+      Circle: (object) =>
         this.findNearParticles(
           { x: object.x, y: object.y },
           object.r + this.settings.constants.max_radius
         ),
-      ],
-      GravityWell: (object) => [this.findNearParticles(object, object.r)],
-      Accelerator: (object) => [
+      GravityWell: (object) => this.findNearParticles(object, object.r),
+      Accelerator: (object) =>
         this.findNearParticles(
           { x: object.x + object.w / 2, y: object.y + object.h / 2 },
           Math.sqrt(object.measurements[0] ** 2 + object.measurements[1] ** 2) +
             this.settings.constants.max_radius
         ),
-      ],
-      Decelerator: (object) => [
+      Decelerator: (object) =>
         this.findNearParticles(
           { x: object.x + object.w / 2, y: object.y + object.h / 2 },
           Math.sqrt(object.measurements[0] ** 2 + object.measurements[1] ** 2) +
             this.settings.constants.max_radius
         ),
-      ],
-      BlackHole: () => [this.particles],
+      BlackHole: () => this.particles,
     };
   }
 
@@ -361,30 +349,19 @@ class SimulationWorker extends SpatialHash {
   mergeParticles(mode, ...particles) {
     const max = particles.reduce((prev, curr) => (prev.mass > curr.mass ? prev : curr));
 
-    const massSum = particles.reduce((sum, { mass }) => sum + mass, 0);
-
-    let mass = max.mass,
-      vx = max.vx * (max.mass / massSum),
-      vy = max.vy * (max.mass / massSum);
+    let mass = max.mass;
 
     mode = mode ? Math.sign(mode) : 1;
 
     for (const p of particles) {
       if (p === max) continue;
       mass += p.mass * mode;
-      vx += p.vx * (p.mass / massSum);
-      vy += p.vy * (p.mass / massSum);
     }
 
-    vx /= particles.length;
-    vy /= particles.length;
-
-    mass = mass >= 30 ? mass : 30;
+    if (mass < 30) mass = 30;
 
     this.newParticle([
       Object.assign({}, max, {
-        vx,
-        vy,
         mass,
         immortal:
           particles.reduce((sum, { immortal }) => sum + immortal, 0) / particles.length,

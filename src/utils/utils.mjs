@@ -363,39 +363,12 @@ export const createButton = (parentSelector, options, id) => {
   return container.querySelector(id ? `#${id}Button` : ".button");
 };
 
-export const initRectShape = (x, y, w, h) => {
-  const defaultSize = 50;
-  const threshold = 25;
-
-  if (!w || Math.abs(w) < threshold) {
-    w = defaultSize;
-    x -= w / 2;
-  }
-
-  if (!h || Math.abs(h) < threshold) {
-    h = defaultSize;
-    y -= h / 2;
-  }
-
-  if (w < 0) {
-    x += w;
-    w = Math.abs(w);
-  }
-
-  if (h < 0) {
-    y += h;
-    h = Math.abs(h);
-  }
-
-  return { x, y, w, h, measurements: new Int16Array([w / 2, h / 2]) };
-};
-
-export const detectCircleCollision = (c1, c2, envelop) => {
+export const detectCircleCollision = (c1, c2, threshold) => {
   const dx = c1.x - c2.x,
     dy = c1.y - c2.y;
   const dSq = dx * dx + dy * dy;
 
-  const r = envelop ? c1.r : c1.r + c2.r;
+  const r = c1.r + c2.r * threshold;
 
   return dSq <= r * r;
 };

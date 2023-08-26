@@ -1,5 +1,10 @@
-import { attract, repulse } from "./gravity_calculations.mjs";
-import { circleCollision, detectCircleCollision, randRangeInt } from "./utils.mjs";
+import {
+  attract,
+  repulse,
+  circleCollision,
+  detectCircleCollision,
+  randRangeInt,
+} from "../utils";
 
 export class Particle {
   /**
@@ -21,13 +26,15 @@ export class Particle {
     this.settings = settings;
     this.mass =
       mass || randRangeInt(settings.constants.max_mass / 4, settings.constants.min_mass);
-    this.r = Math.min(
-      Math.max(
-        Math.ceil(radius || this.mass / settings.constants.mass_radius_ratio),
-        settings.constants.min_radius
-      ),
-      settings.constants.max_radius
-    );
+    this.r =
+      radius ||
+      Math.min(
+        Math.max(
+          Math.ceil(this.mass / settings.constants.mass_radius_ratio),
+          settings.constants.min_radius
+        ),
+        settings.constants.max_radius
+      );
 
     this.collision = collision || 0;
     this.immortal = immortal || 0;
@@ -235,7 +242,7 @@ export class AttractorParticle extends Particle {
   constructor(id, settings, params) {
     super(id, settings, params);
 
-    this.strength = params.strength || 100;
+    this.strength = params.strength || this.mass;
     this.colour = "hsl(240,100%,69%)";
   }
 
@@ -257,7 +264,7 @@ export class AttractorParticle extends Particle {
     for (const p of near) this.#attract(p);
   }
 
-  update(width, height, [near]) {
+  update(width, height, near) {
     this.updateCalculations(width, height, near);
 
     this.updatePosition();
@@ -268,7 +275,7 @@ export class RepulserParticle extends Particle {
   constructor(id, settings, params) {
     super(id, settings, params);
 
-    this.strength = params.strength || 100;
+    this.strength = params.strength || this.mass;
     this.colour = "hsl(0,100%,69%)";
   }
 
@@ -290,7 +297,7 @@ export class RepulserParticle extends Particle {
     for (const p of near) this.#repulse(p);
   }
 
-  update(width, height, [near]) {
+  update(width, height, near) {
     this.updateCalculations(width, height, near);
 
     this.updatePosition();
@@ -301,7 +308,7 @@ export class ChargedParticle extends Particle {
   constructor(id, settings, params) {
     super(id, settings, params);
 
-    this.strength = params.strength || 100;
+    this.strength = params.strength || this.mass;
     this.charge = params.charge || [-1, 1][~~(Math.random() * 2)];
     this.colour = `hsl(${this.charge > 0 ? 0 : 240},100%,53%)`;
   }
@@ -332,7 +339,7 @@ export class ChargedParticle extends Particle {
     }
   }
 
-  update(width, height, [near]) {
+  update(width, height, near) {
     this.updateCalculations(width, height, near);
 
     this.updatePosition();
@@ -346,8 +353,7 @@ export class MergeParticle extends Particle {
     this.colour = `hsl(120,${~~Math.min(15 + this.mass / 50, 100)}%,${~~Math.max(
       80 - this.mass / 50,
       15
-    )}%)`; // TODO: Maybe change the environment extra to function as well
-    // TODO: display mass on particle (make a toggle for)
+    )}%)`;
   }
 
   static getClassName() {
@@ -359,7 +365,7 @@ export class MergeParticle extends Particle {
   }
 
   detectCollision(p) {
-    if (p instanceof MergeParticle && this.immortal <= 0) return;
+    if (p instanceof MergeParticle) return;
     super.detectCollision(p);
   }
 
@@ -371,7 +377,12 @@ export class MergeParticle extends Particle {
     const merge = [];
 
     for (const p of near) {
-      if (p instanceof MergeParticle && detectCircleCollision(this, p, true)) {
+      if (
+        Math.random() < 0.8 &&
+        p instanceof MergeParticle &&
+        p.immortal <= 0 &&
+        detectCircleCollision(this, p, Math.random() / 2)
+      ) {
         merge.push(p);
       }
     }
@@ -379,7 +390,7 @@ export class MergeParticle extends Particle {
     return merge;
   }
 
-  update(width, height, [near]) {
+  update(width, height, near) {
     const merge = this.updateCalculations(width, height, near);
 
     this.updatePosition();

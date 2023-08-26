@@ -1,5 +1,5 @@
-import { RenderBase } from "./render_base.mjs";
-import { complementaryHSLColour } from "./utils.mjs";
+import { RenderBase } from "./render_base";
+import { complementaryHSLColour } from "../utils";
 
 export class Renderer extends RenderBase {
   constructor(canvas, settings) {
