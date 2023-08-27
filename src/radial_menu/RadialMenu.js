@@ -34,9 +34,8 @@ export class RadialMenu {
 
     this.currentMenu = null;
 
-    this.previousSelection = null;
     this.currentSelection = null;
-    this.backupSelection = params.defaultSelection || [];
+    this.backupSelection = params.defaultSelection || RadialMenu.deepCopy(this.menuItems);
 
     document.body.addEventListener("mouseup", (event) => {
       const className = event.target.parentNode.getAttribute("class")?.split(" ")[0];
@@ -79,22 +78,19 @@ export class RadialMenu {
       }
 
       if (this.reset === true) {
-        this.onClick?.({ id: "reset" })?.bind(this);
+        this.onClick?.([{ id: "reset" }])?.bind(this);
         this.reset = false;
-      } else if (this.currentSelection) {
-        if (this.currentSelection.child) {
-          this.previousSelection = RadialMenu.deepCopy(this.currentSelection);
-          this.backupSelection[
-            this.backupSelection.findIndex(({ id }) => id === this.previousSelection.id)
-          ] = RadialMenu.deepCopy(this.previousSelection);
-        } else {
-          this.previousSelection = this.backupSelection.find(
-            ({ id }) => id === this.currentSelection.id
-          );
-        }
-
-        this.onClick?.(RadialMenu.deepCopy(this.previousSelection))?.bind(this);
-        this.currentSelection = null;
+      } else if (this.pause === true) {
+        this.onClick?.([{ id: "pause" }])?.bind(this);
+        this.pause = false;
+      } else {
+        this.onClick?.(
+          RadialMenu.nestedProperty(
+            this.backupSelection,
+            RadialMenu.getPath(this.backupSelection).join("."),
+            true
+          )
+        )?.bind(this);
       }
 
       this.parentItems = [];
@@ -112,25 +108,25 @@ export class RadialMenu {
   }
 
   setPreviousSelection() {
-    if (this.levelItems.some(({ id }) => id.includes("reset")) && this.reset === true) {
+    if (this.reset === true || this.pause === true) {
       if (this.parentItems.length) {
         this.setSelectedIndex(~~(Math.random() * this.levelItems.length));
       } else {
         this.setSelectedIndex(this.levelItems.findIndex(({ id }) => id === "reset"));
       }
+      this.reset = false;
+      this.pause = false;
       return;
     }
 
-    let selection = this.parentMenu.length
-      ? RadialMenu.deepCopy(
-          this.currentSelection
-            ? this.backupSelection.find(({ id }) => id === this.currentSelection.id)
-            : this.backupSelection[0]
-        )
-      : RadialMenu.deepCopy(this.previousSelection || this.backupSelection[0]);
-
-    for (let i = 0, len = this.parentMenu.length; i < len; i++)
-      if (selection.child) selection = selection.child;
+    let selection;
+    if (this.parentMenu.length) {
+      selection = RadialMenu.findNested(this.backupSelection, (backup) =>
+        this.levelItems.some((item) => item.id === backup[0]?.id)
+      )[0].value[0];
+    } else {
+      selection = this.currentSelection || this.backupSelection[0];
+    }
 
     const selectedIndex = this.levelItems.findIndex(({ id }) => id === selection.id);
 
@@ -174,6 +170,7 @@ export class RadialMenu {
   }
 
   returnToParentMenu() {
+    this.reset = false;
     this.getParentMenu().setAttribute("class", "menu");
     RadialMenu.setClassAndWaitForTransition(this.currentMenu, "menu inner").then(() => {
       this.currentMenu.remove();
@@ -190,15 +187,26 @@ export class RadialMenu {
 
       if (item.id.includes("reset")) {
         this.reset = true;
-      } else if (this.parentMenu.length) {
-        let text;
-        if (this.parentMenu.length > 1) {
-          text = "child";
-          for (let i = 0, len = this.parentMenu.length - 2; i < len; i++)
-            text += ".child";
-        }
-        RadialMenu.nestedProperty(this.currentSelection, text).child = item;
-      } else this.currentSelection = item;
+      } else if (item.id.includes("pause")) {
+        this.pause = true;
+      } else {
+        this.currentSelection = item;
+
+        const backupPath = RadialMenu.findNested(
+          this.backupSelection,
+          (b) => b === this.currentSelection.id
+        )[0].path;
+
+        const parent = RadialMenu.nestedProperty(
+          this.backupSelection,
+          backupPath.slice(0, -2).join(".")
+        );
+
+        const newDefault = parent[backupPath.at(-2)];
+
+        parent.splice(backupPath.at(-2), 1);
+        parent.unshift(newDefault);
+      }
 
       if (item.items) this.showNestedMenu(item);
       else this.close();
@@ -563,11 +571,42 @@ export class RadialMenu {
     setTimeout(fn, 10);
   }
 
-  static nestedProperty(obj, path) {
+  static nestedProperty(obj, path, all, objAll = []) {
+    if (all) {
+      if (!Array.isArray(obj)) objAll.push(obj);
+      if (!path) return objAll;
+    }
     if (!path) return obj;
     const props = path.split(".");
-    return RadialMenu.nestedProperty(obj[props.shift()], props.join("."));
+    return RadialMenu.nestedProperty(obj[props.shift()], props.join("."), all, objAll);
+  }
+
+  static findNested(value, testFn, maxDepth, path = [], depth = 0) {
+    const matches = [];
+
+    if (testFn(value)) matches.push({ path, value });
+
+    if (depth >= maxDepth) return matches;
+
+    if (Array.isArray(value) || typeof value === "object") {
+      for (const key in value) {
+        matches.push(
+          ...RadialMenu.findNested(value[key], testFn, maxDepth, [...path, key], depth++)
+        );
+      }
+    }
+
+    return matches;
   }
 
   static deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
+
+  static getPath = (obj, path = []) => {
+    if (!obj) return path;
+    let p;
+    if (Array.isArray(obj)) p = "0";
+    else p = "items";
+    path.push(p);
+    return RadialMenu.getPath(obj[p], path);
+  };
 }

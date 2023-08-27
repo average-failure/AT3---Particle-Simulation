@@ -1,4 +1,4 @@
-import { createCheckbox, createSelect, createSlider, createButton, FPS } from "./utils";
+import { createCheckbox, createSlider, FPS } from "./utils";
 import { settings } from "./settings";
 
 export class DOMHandler {
@@ -12,7 +12,6 @@ export class DOMHandler {
       },
       sliders: {},
       toggles: {},
-      buttons: {},
       pause: document.getElementById("pause"),
     };
 
@@ -35,6 +34,7 @@ export class DOMHandler {
     this.overlay.width = window.innerWidth;
     this.overlay.height = window.innerHeight;
     this.ctx.strokeStyle = "#FFFFFF";
+    this.menuSize = Math.min(window.innerWidth, window.innerHeight) * 0.3;
   }
 
   async #initDOMElements() {
@@ -86,46 +86,35 @@ export class DOMHandler {
     const { RadialMenu } = await import("./radial_menu/RadialMenu"),
       { PARTICLES, OBJECTS } = await import("./bodies");
 
-    const resetLength = (Math.random() + 0.5) * 10;
+    const items = [
+      {
+        id: "newParticle",
+        title: "New Particle",
+        items: [{ id: "Random", title: "Random" }],
+      },
+      {
+        id: "newObject",
+        title: "New Object",
+        items: [{ id: "FlowControl", title: "Flow Control" }],
+      },
+      {
+        id: "multiParticle",
+        title: "Multi Particle",
+        items: [{ id: "Random", title: "Random" }],
+      },
+      { id: "toggleWell", title: "Invert Gravity Wells" },
 
-    const params = {
-      parent: (this.domElements.menuParent = document.getElementById("wrapper")),
-      size: Math.min(window.innerWidth, window.innerHeight) * 0.5,
-      menuItems: [
-        {
-          id: "newParticle",
-          title: "New Particle",
-          items: [{ id: "Random", title: "Random" }],
-        },
-        {
-          id: "newObject",
-          title: "New Object",
-          items: [{ id: "FlowControl", title: "Flow Control" }],
-        },
-        {
-          id: "multiParticle",
-          title: "Multi Particle",
-          items: [{ id: "Random", title: "Random" }],
-        },
-        { id: "toggleWell", title: "Invert Gravity Wells" },
-        { id: "reset", title: "Reset", items: [] },
-      ],
-      defaultSelection: [
-        (this.selection = { id: "newParticle", child: { id: "Particle" } }),
-        { id: "newObject", child: { id: "Rectangle" } },
-        { id: "multiParticle", child: { id: "Particle" } },
-        { id: "toggleWell" },
-        { id: "reset", child: { id: "reset" + ~~(Math.random() * resetLength) } },
-      ],
-    };
+      { id: "reset", title: "Reset", items: [] },
+      { id: "pause", title: "Pause" },
+    ];
 
     for (const p of Object.keys(PARTICLES)) {
-      params.menuItems[0].items.push({ id: p, title: p });
-      params.menuItems[2].items.push({ id: p, title: p });
+      items[0].items.push({ id: p, title: p });
+      items[2].items.push({ id: p, title: p });
     }
 
     for (const o of Object.keys(OBJECTS)) {
-      params.menuItems[1].items.push({ id: o, title: o });
+      items[1].items.push({ id: o, title: o });
     }
 
     const shuffle = () => {
@@ -147,25 +136,51 @@ export class DOMHandler {
       return a.join("");
     };
 
-    for (let i = 0; i < resetLength; ++i) {
-      params.menuItems[4].items.push({
+    for (let i = 0, len = (Math.random() + 0.5) * 10; i < len; ++i) {
+      items[4].items.push({
         id: "reset" + i,
         title: Math.random() < 0.75 ? shuffle() : "RESET",
       });
     }
 
+    const params = {
+      parent: (this.domElements.menu = document.getElementById("wrapper")),
+      size: this.menuSize,
+      menuItems: items,
+      defaultSelection: JSON.parse(JSON.stringify(items)),
+    };
+
+    const replaceDefault = (i, name) => {
+      const item = params.defaultSelection[i].items;
+      item.splice(
+        item.findIndex(({ id }) => id === name),
+        1
+      );
+      item.unshift({ id: name, title: name });
+    };
+
+    replaceDefault(0, "Particle");
+    replaceDefault(1, "Rectangle");
+    replaceDefault(2, "Particle");
+
     params.onClick = (selection) => {
-      if (!selection) return;
+      if (!selection || !Array.isArray(selection)) return;
 
-      if (selection.id === "reset") {
-        this.reset();
-        return;
+      switch (selection[0].id) {
+        case "reset":
+          this.reset();
+          break;
+        case "pause":
+          this.pause();
+          break;
+        default:
+          this.selection = selection;
+          break;
       }
-
-      this.selection = selection;
     };
 
     this.menu = new RadialMenu(params);
+    this.selection = [{ id: "mouseMode" }, { id: "newParticle" }, { id: "Particle" }];
 
     this.canvas.addEventListener("mousedown", (e) => {
       if (e.button !== 2) return;
@@ -176,14 +191,14 @@ export class DOMHandler {
         return;
       }
 
-      this.domElements.menuParent.style.top = `${
-        e.clientY - parseInt(getComputedStyle(this.domElements.menuParent).height, 10) / 2
+      this.domElements.menu.style.top = `${
+        e.clientY - parseInt(getComputedStyle(this.domElements.menu).height, 10) / 2
       }px`;
-      this.domElements.menuParent.style.left = `${
-        e.clientX - parseInt(getComputedStyle(this.domElements.menuParent).width, 10) / 2
+      this.domElements.menu.style.left = `${
+        e.clientX - parseInt(getComputedStyle(this.domElements.menu).width, 10) / 2
       }px`;
 
-      this.menu.open(Math.min(window.innerWidth, window.innerHeight) * 0.5);
+      this.menu.open(this.menuSize);
     });
   }
 
@@ -298,7 +313,7 @@ export class DOMHandler {
         hyp = Math.sqrt(Math.random()) * (multiRadius - settings.constants.max_radius);
       this.newParticle(
         { x: c[0] + Math.cos(angle) * hyp, y: c[1] + Math.sin(angle) * hyp },
-        this.selection.child.id
+        this.selection[1].id
       );
       requestAnimationFrame(this.multi);
     };
@@ -316,7 +331,7 @@ export class DOMHandler {
     const mousedown = (event) => {
       event.preventDefault();
 
-      if (this.mouseDown === true || event.button !== 0) return;
+      if (this.mouseDown === true || event.button !== 0 || this.menu.currentMenu) return;
 
       m = getMousePos(event);
 
@@ -324,13 +339,13 @@ export class DOMHandler {
       pre[1] = m[1];
       this.mouseDown = true;
 
-      switch (this.selection.id) {
+      switch (this.selection[0].id) {
         case "newParticle":
           this.mouseEvent = "particle";
           break;
         case "newObject":
           this.mouseEvent = "object";
-          if (this.selection.child.id === "FlowControl") {
+          if (this.selection[1].id === "FlowControl") {
             points.length = 0;
             this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
             this.messageWorker({ flow: ["new", m] });
@@ -377,7 +392,7 @@ export class DOMHandler {
           this.ctx.closePath();
           break;
         case "object":
-          switch (this.selection.child.id) {
+          switch (this.selection[1].id) {
             case "Accelerator":
             case "Decelerator":
             case "Rectangle":
@@ -437,7 +452,7 @@ export class DOMHandler {
 
       switch (this.mouseEvent) {
         case "object":
-          switch (this.selection.child.id) {
+          switch (this.selection[1].id) {
             case "Rectangle":
               this.newObject({ x: pre[0], y: pre[1], w: dx, h: dy }, "Rectangle");
               break;
@@ -491,7 +506,7 @@ export class DOMHandler {
         case "particle":
           this.newParticle(
             { x: pre[0], y: pre[1], vx: dx, vy: dy },
-            this.selection.child.id
+            this.selection[1].id
           );
           break;
         default:

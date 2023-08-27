@@ -40,7 +40,7 @@ export const settings = {
     coefficient_of_restitution: true,
     drag: false,
     show_velocity: false,
-    show_mass: true,
+    show_mass: false,
     animated_environment: false,
   },
   pause: false,

@@ -38,7 +38,7 @@ class SimulationMain extends DOMHandler {
   #initWorker() {
     this.initCanvas();
 
-    this.worker = new Worker("src/simulation/canvas_worker.js", { type: "module" });
+    this.worker = new Worker("src/simulation/canvas_worker", { type: "module" });
     this.worker.onmessage = this.#onMessage.bind(this);
 
     if (!this.canvas.transferControlToOffscreen) {

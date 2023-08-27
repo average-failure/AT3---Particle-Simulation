@@ -530,3 +530,16 @@ export const complementaryHSLColour = (h, s, l) => {
 
   return `hsl(${h},${s}%,${100 - l}%)`;
 };
+
+// * UNUSED
+export const test = (testFn, outerIterations = 10, innerIterations = 10000, ...args) => {
+  if (typeof testFn !== "function") return;
+  let previousTime = performance.now(),
+    totalTime = 0;
+  for (let n = 0; n < outerIterations; ++n) {
+    previousTime = performance.now();
+    for (let i = 0; i < innerIterations; ++i) testFn(...args);
+    totalTime += performance.now() - previousTime;
+  }
+  return totalTime / outerIterations;
+};

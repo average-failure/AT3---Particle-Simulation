@@ -16,6 +16,10 @@
 
 ❌ finish rest of ui
 
+✅ fix first level menu (i broke it again)
+
+✅ finally fixed the menu (made it triple layered)
+
 # ------------------------ Maybe ------------------------ #
 
 ❌ fill screen with random

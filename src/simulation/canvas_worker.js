@@ -244,6 +244,7 @@ class SimulationWorker extends SpatialHash {
    * @param {Particle} particle The instance of Particle to remove
    */
   deleteParticle(particle) {
+    if (!(particle instanceof PARTICLES.Particle)) return;
     this.removeClient(particle);
     particle.dispose();
     const index = this.particles.indexOf(particle);
@@ -304,43 +305,70 @@ class SimulationWorker extends SpatialHash {
     return this.findNear(p, r).filter((n) => n instanceof Environment);
   }
 
-  splitParticle(p, blackHole) {
-    let r = p.mass * 0.95;
+  splitParticle(p, blackHole, type) {
+    // const masses = [],
+    //   min = this.settings.constants.min_mass,
+    //   parts = Math.min(
+    //     ~~((r / Math.sqrt(r)) * (Math.random() * 0.5 + 0.5)) + 2,
+    //     Math.max(r / (min * 2), 2)
+    //   ),
+    //   m = r - min * parts,
+    //   c = ~~(m / parts),
+    //   d = c * 0.3;
 
-    const masses = [],
-      min = this.settings.constants.min_mass,
-      parts = Math.min(
-        ~~((r / Math.sqrt(r)) * (Math.random() * 0.5 + 0.5)) + 2,
-        Math.max(r / (min * 2), 2)
-      ),
-      m = r - min * parts,
-      c = ~~(m / parts),
-      d = c * 0.3;
+    // for (let i = 0; i < parts; i++) {
+    //   if (r < min) break;
+    //   const offset = ~~((Math.random() - 0.5) * 2 * d);
+    //   const p = c + offset + min;
+    //   masses.push(p);
+    //   r -= p;
+    // }
 
-    for (let i = 0; i < parts; i++) {
+    const LOSS = 0.95;
+    const THRESHOLD = 500;
+
+    const masses = [];
+    const min = this.settings.constants.min_mass;
+
+    let s,
+      parts = 0,
+      r = p.mass * LOSS;
+
+    while (r > 0) {
       if (r < min) break;
-      const offset = ~~((Math.random() - 0.5) * 2 * d);
-      const p = c + offset + min;
-      masses.push(p);
-      r -= p;
+
+      s = ~~(Math.random() * (r - min)) + min;
+      masses.splice(~~(Math.random() * parts++), 0, s);
+      r -= s;
     }
+
+    const vx = p.vx * LOSS,
+      vy = p.vy * LOSS;
 
     for (const mass of masses) {
       const angle = (Math.random() - 0.5) * Math.min(parts / 10, Math.PI),
         cos = Math.cos(angle),
         sin = Math.sin(angle);
-      this.newParticle([
-        Object.assign({}, p, {
-          x: p.x + (Math.random() - 0.5) * parts,
-          y: p.y + (Math.random() - 0.5) * parts,
-          vx: p.vx * cos - p.vy * sin,
-          vy: p.vx * sin + p.vy * cos,
-          mass,
-          radius: blackHole ? 1 : null,
-          immortal: 30 * (Math.random() * 2 + 0.5),
-        }),
-        p.getClassName(),
-      ]);
+
+      const params = Object.assign({}, p, {
+        x: p.x + (Math.random() - 0.5) * parts,
+        y: p.y + (Math.random() - 0.5) * parts,
+        vx: vx * cos - vy * sin,
+        vy: vx * sin + vy * cos,
+        mass,
+      });
+
+      if (mass > THRESHOLD) {
+        this.splitParticle(params, blackHole, type || p.getClassName());
+      } else {
+        this.newParticle([
+          Object.assign(params, {
+            radius: blackHole ? 1 : null,
+            immortal: 30 * (Math.random() * 2 + 0.5),
+          }),
+          type || p.getClassName(),
+        ]);
+      }
     }
 
     this.deleteParticle(p);
@@ -452,9 +480,9 @@ class SimulationWorker extends SpatialHash {
       this.availableObjects[object.getClassName()](object)
     );
 
-    if (returnValue instanceof Array && returnValue.length)
+    if (Array.isArray(returnValue) && returnValue.length)
       for (const r of returnValue) {
-        if (r.mass <= this.settings.constants.min_mass) this.deleteParticle(r);
+        if (r.mass <= this.settings.constants.min_mass * 2) this.deleteParticle(r);
         else this.splitParticle(r, true);
       }
 

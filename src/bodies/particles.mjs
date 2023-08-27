@@ -36,6 +36,8 @@ export class Particle {
         settings.constants.max_radius
       );
 
+    this.updateColour();
+
     this.collision = collision || 0;
     this.immortal = immortal || 0;
   }
