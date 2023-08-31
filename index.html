@@ -5,19 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Particle Simulation</title>
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="fonts/fonts.css" />
     <!-- Menu Stylesheet -->
-    <link href="./src/radial_menu/RadialMenu.css" rel="stylesheet" />
+    <link rel="stylesheet" href="src/radial_menu/RadialMenu.css" />
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css" />
     <!-- Scripts -->
     <script async src="src/prototype_changes.js"></script>
     <script defer src="src/main.js" type="module"></script>
+    <!-- Lib for paths because workers are pain -->
+    <script src="https://cdn.jsdelivr.net/gh/Kaiido/path2D-inspection@master/build/path2D-inspection.min.js"></script>
   </head>
   <body>
     <canvas id="envCanvas" class="noPointer"></canvas>
@@ -44,16 +41,24 @@
     </div>
 
     <div class="settings right">
-      <div id="sliders"></div>
-      <div id="dropdowns"></div>
+      <div class="arrow">
+        <p>🞂</p>
+      </div>
+      <div id="sliders" class="innerSettings"></div>
     </div>
 
     <div class="settings left">
-      <div id="checkboxes"></div>
-      <div id="buttons"></div>
+      <div id="checkboxes" class="innerSettings"></div>
+      <div class="arrow">
+        <p>🞀</p>
+      </div>
     </div>
 
+    <div id="currentMode"></div>
+
     <div id="wrapper"></div>
+
+    <div id="particleCustomisation"></div>
 
     <div id="pause" class="hidden">
       <h1>
@@ -61,5 +66,12 @@
         <p>Click anywhere to resume...</p>
       </h1>
     </div>
+
+    <div id="welcome">
+      <h1>A particle simulation...</h1>
+      <h2>Click anywhere to start!</h2>
+    </div>
+
+    <div id="tutorial"></div>
   </body>
 </html>

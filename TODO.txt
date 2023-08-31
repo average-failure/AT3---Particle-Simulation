@@ -4,7 +4,7 @@
 
 ✅ make radial menu for tool selection
 
-❌ add lifespan for particles and objects
+✅ add lifespan for particles and objects
 
 ❌ add cancel object creation
 
@@ -14,11 +14,21 @@
 
 ❌ rotate text in radial menu properly
 
-❌ finish rest of ui
+✅ finish rest of ui
 
 ✅ fix first level menu (i broke it again)
 
 ✅ finally fixed the menu (made it triple layered)
+
+❌ add border type (hard = tp, soft = push)
+
+✅ add customise particle menu
+
+❌ splitter particle (explodes and splits into temp particles that loops again and again)
+
+❌ object deletion (rectangle selection; delete every object completely inside)
+
+❌ thief particle (steals some mass and lifespan and low chance to steal properties and methods)
 
 # ------------------------ Maybe ------------------------ #
 

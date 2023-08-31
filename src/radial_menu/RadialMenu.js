@@ -83,6 +83,9 @@ export class RadialMenu {
       } else if (this.pause === true) {
         this.onClick?.([{ id: "pause" }])?.bind(this);
         this.pause = false;
+      } else if (this.customise === true) {
+        this.onClick?.([{ id: "customise" }])?.bind(this);
+        this.customise = false;
       } else {
         this.onClick?.(
           RadialMenu.nestedProperty(
@@ -108,14 +111,14 @@ export class RadialMenu {
   }
 
   setPreviousSelection() {
-    if (this.reset === true || this.pause === true) {
-      if (this.parentItems.length) {
+    if (this.reset === true || this.pause === true || this.customise === true) {
+      const e =
+        this.reset === true ? "reset" : this.pause === true ? "pause" : "customise";
+      if (this.levelItems.every(({ id }) => id === e)) {
         this.setSelectedIndex(~~(Math.random() * this.levelItems.length));
       } else {
-        this.setSelectedIndex(this.levelItems.findIndex(({ id }) => id === "reset"));
+        this.setSelectedIndex(this.levelItems.findIndex(({ id }) => id === e));
       }
-      this.reset = false;
-      this.pause = false;
       return;
     }
 
@@ -125,7 +128,7 @@ export class RadialMenu {
         this.levelItems.some((item) => item.id === backup[0]?.id)
       )[0].value[0];
     } else {
-      selection = this.currentSelection || this.backupSelection[0];
+      selection = this.backupSelection[0];
     }
 
     const selectedIndex = this.levelItems.findIndex(({ id }) => id === selection.id);
@@ -170,7 +173,6 @@ export class RadialMenu {
   }
 
   returnToParentMenu() {
-    this.reset = false;
     this.getParentMenu().setAttribute("class", "menu");
     RadialMenu.setClassAndWaitForTransition(this.currentMenu, "menu inner").then(() => {
       this.currentMenu.remove();
@@ -189,7 +191,13 @@ export class RadialMenu {
         this.reset = true;
       } else if (item.id.includes("pause")) {
         this.pause = true;
+      } else if (item.id.includes("customise")) {
+        this.customise = true;
       } else {
+        this.reset = false;
+        this.pause = false;
+        this.customise = false;
+
         this.currentSelection = item;
 
         const backupPath = RadialMenu.findNested(

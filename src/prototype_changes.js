@@ -1,6 +1,11 @@
 if (CanvasRenderingContext2D != undefined) {
   CanvasRenderingContext2D.prototype.drawCurve = function (points, tension, path) {
-    const p = path instanceof Path2D ? path : new Path2D();
+    // Roy Aarts @ https://stackoverflow.com/a/49371349
+    // Draws a smooth curve from an array of points
+
+    const p = path ? (path instanceof Path2D ? path : new Path2D()) : this;
+
+    if (p === this) this.beginPath();
 
     p.moveTo(points[0].x, points[0].y);
 
@@ -25,8 +30,12 @@ if (CanvasRenderingContext2D != undefined) {
       segments.push([p0, { x: cp1x, y: cp1y }, { x: cp2x, y: cp2y }, p2]);
     }
 
-    this.stroke(p);
+    if (p === this) {
+      this.stroke();
+      return { segments };
+    }
 
+    this.stroke(p);
     return { p, segments };
   };
 }

@@ -1,9 +1,9 @@
-function gravity(mode, p1, p2, strength, settings) {
+function gravity(mode, p1, p2, strength, settings, blackHole) {
   const dx = p1.x - p2.x,
     dy = p1.y - p2.y;
   const dSq = dx * dx + dy * dy;
 
-  let f =
+  const f =
     ((p1.strength *
       2.5 *
       settings.variables[mode < 0 ? "repulsion_strength" : "attraction_strength"]) /
@@ -17,13 +17,16 @@ function gravity(mode, p1, p2, strength, settings) {
     (Number.isFinite(strength) ? strength : 1);
 
   const max = mode < 0 ? 300 : 100;
-  if (f > max) f = max;
 
-  return { dx, dy, f };
+  let a = blackHole ? f / 300 : f / p2.mass;
+
+  if (a > max) a = max;
+
+  return { dx, dy, a };
 }
 
 export function attract(p1, p2, settings, strength, blackHole, threshold) {
-  const { dx, dy, f } = gravity(1, p1, p2, strength, settings);
+  const { dx, dy, a } = gravity(1, p1, p2, strength, settings, blackHole);
 
   if (
     dx * dx + dy * dy < (p1.r * (threshold || 0.1)) ** 2 &&
@@ -34,15 +37,15 @@ export function attract(p1, p2, settings, strength, blackHole, threshold) {
 
   const immortal = p2.immortal > 0 ? p2.immortal : 1;
 
-  p2.vx += (f * dx * settings.variables.dt) / immortal;
-  p2.vy += (f * dy * settings.variables.dt) / immortal;
+  p2.vx += (a * dx * settings.variables.dt) / immortal;
+  p2.vy += (a * dy * settings.variables.dt) / immortal;
 }
 
 export function repulse(p1, p2, settings, strength) {
-  const { dx, dy, f } = gravity(-1, p1, p2, strength, settings);
+  const { dx, dy, a } = gravity(-1, p1, p2, strength, settings);
 
   const immortal = p2.immortal > 0 ? p2.immortal : 1;
 
-  p2.vx -= (f * dx * settings.variables.dt) / immortal;
-  p2.vy -= (f * dy * settings.variables.dt) / immortal;
+  p2.vx -= (a * dx * settings.variables.dt) / immortal;
+  p2.vy -= (a * dy * settings.variables.dt) / immortal;
 }

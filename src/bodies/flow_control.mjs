@@ -4,7 +4,7 @@ export class FlowControl extends Environment {
   constructor(settings, params) {
     super(null, settings);
 
-    this.flowStrength = settings.variables.flow_strength / 100 || 0.05;
+    this.flowStrength = settings.variables.flow_strength || 10;
 
     this.size = settings.variables.flow_size || 10;
 
@@ -103,8 +103,8 @@ class FlowBase {
     const dSq = (upx - cx) ** 2 + (upy - cy) ** 2;
 
     if (dSq < p.r ** 2) {
-      p.vx += this.dx * this.strength;
-      p.vy += this.dy * this.strength;
+      p.vx += this.dx * (this.strength / p.mass);
+      p.vy += this.dy * (this.strength / p.mass);
     }
   }
 }

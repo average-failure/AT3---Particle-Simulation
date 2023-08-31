@@ -24,6 +24,7 @@ class SimulationWorker extends SpatialHash {
 
     this.pIds = this.oIds = -1;
     this.particles = [];
+    this.grabbed = [];
 
     this.counter = 0;
 
@@ -141,14 +142,6 @@ class SimulationWorker extends SpatialHash {
     this.settings.toggles[setting] = value;
   }
 
-  onButton(event) {
-    switch (event) {
-      case "reset":
-        this.reset();
-        break;
-    }
-  }
-
   flow([mode, [x, y]]) {
     switch (mode) {
       case "new":
@@ -185,6 +178,36 @@ class SimulationWorker extends SpatialHash {
     this.fps.start(10, 10, (fps) => {
       postMessage({ updateFps: fps });
     });
+  }
+
+  grabParticle([x, y]) {
+    this.grabPosition = { pre: { x, y }, x, y };
+    for (const p of this.particles) {
+      const xOffset = x - p.x,
+        yOffset = y - p.y;
+      if (this.renderer.ctx.isPointInPath(p.path, xOffset, yOffset)) {
+        this.grabbed.push({ particle: p, xOffset, yOffset });
+        p.vx = p.vy = 0;
+        p.grabbed = true;
+      }
+    }
+  }
+
+  moveGrab([x, y]) {
+    if (!this.grabbed.length) return;
+    this.grabPosition = { pre: this.grabPosition, x, y };
+    const dx = x - this.grabPosition.pre.x,
+      dy = y - this.grabPosition.pre.y;
+    for (const { particle } of this.grabbed) {
+      particle.vx += dx;
+      particle.vy += dy;
+    }
+  }
+
+  releaseParticle() {
+    if (!this.grabbed.length) return;
+    for (const { particle } of this.grabbed) particle.grabbed = false;
+    this.grabbed.length = 0;
   }
 
   /**
@@ -239,6 +262,30 @@ class SimulationWorker extends SpatialHash {
     return p;
   }
 
+  removeParticle([[x, y], type]) {
+    if (!this.particles.length) return;
+
+    const d = (p) => {
+      if (!(p instanceof PARTICLES.Particle)) {
+        p = this.particles[~~(Math.random() * this.particles.length)];
+      }
+
+      this.deleteParticle(p);
+    };
+
+    if (x && y) {
+      for (const p of this.particles) {
+        if (this.renderer.ctx.isPointInPath(p.path, x - p.x, y - p.y)) {
+          if (typeof type === "string") {
+            if (type.toLowerCase() === p.getClassName().toLowerCase()) d(p);
+          } else d(p);
+        }
+      }
+    } else d();
+
+    postMessage({ updateParticleCount: this.particles.length });
+  }
+
   /**
    * Deletes the specified particle from the grid and array
    * @param {Particle} particle The instance of Particle to remove
@@ -260,11 +307,15 @@ class SimulationWorker extends SpatialHash {
    * @returns A new instance of the selected object type
    */
   #createObjectInstance(type, settings, params) {
-    const SelectedClass = OBJECTS[type] || OBJECTS.Rectangle;
-    // Object.values(OBJECTS)[
-    //   ~~(Math.random() * Object.keys(OBJECTS).length)
-    // ];
-    if (type === "GravityWell" || type === "BlackHole") params.ctx = this.ctx;
+    const SelectedClass =
+      OBJECTS[type] ||
+      Object.values(OBJECTS)[~~(Math.random() * Object.keys(OBJECTS).length)];
+
+    if (
+      SelectedClass.getClassName() === "GravityWell" ||
+      SelectedClass.getClassName() === "BlackHole"
+    )
+      params.ctx = this.ctx;
 
     return new SelectedClass(++this.oIds, settings, params);
   }
@@ -297,6 +348,34 @@ class SimulationWorker extends SpatialHash {
     return o;
   }
 
+  deleteObject([[x, y], type]) {
+    const env = Object.values(this.env).flat();
+    if (!env.length) return;
+
+    const d = (o) => {
+      if (!(o instanceof Environment)) {
+        o = env[~~(Math.random() * env.length)];
+      }
+
+      const index = this.env[o.getClassName()].indexOf(o);
+      o.dispose();
+      this.env[o.getClassName()].splice(index, 1);
+    };
+    if (x && y) {
+      for (const o of env) {
+        if (this.envRenderer.ctx.isPointInPath(o.path, x - o.x, y - o.y)) {
+          if (typeof type === "string") {
+            if (type.toLowerCase() === o.getClassName().toLowerCase()) d(o);
+          } else d(o);
+        }
+      }
+    } else d();
+
+    this.envRenderer.render(this.env);
+
+    postMessage({ updateObjectCount: env.length });
+  }
+
   findNearParticles(p, r) {
     return this.findNear(p, r).filter((n) => n instanceof PARTICLES.Particle);
   }
@@ -325,7 +404,7 @@ class SimulationWorker extends SpatialHash {
     // }
 
     const LOSS = 0.95;
-    const THRESHOLD = 500;
+    const THRESHOLD = this.settings.constants.max_radius / 4;
 
     const masses = [];
     const min = this.settings.constants.min_mass;
@@ -342,29 +421,44 @@ class SimulationWorker extends SpatialHash {
       r -= s;
     }
 
-    const vx = p.vx * LOSS,
+    let vx = p.vx * LOSS,
       vy = p.vy * LOSS;
 
-    for (const mass of masses) {
-      const angle = (Math.random() - 0.5) * Math.min(parts / 10, Math.PI),
-        cos = Math.cos(angle),
-        sin = Math.sin(angle);
+    if (blackHole !== true && parts > 1) {
+      vx += 50 * (Math.sign(vx) || 1);
+      vy += 50 * (Math.sign(vy) || 1);
+    }
 
+    const lifespan = (p.lifespan * LOSS) / parts;
+
+    for (const mass of masses) {
       const params = Object.assign({}, p, {
         x: p.x + (Math.random() - 0.5) * parts,
         y: p.y + (Math.random() - 0.5) * parts,
-        vx: vx * cos - vy * sin,
-        vy: vx * sin + vy * cos,
         mass,
+        radius: (mass / p.mass) * p.r,
+        lifespan: lifespan >= 10 ? lifespan : 10 * (Math.random() + 1),
       });
 
-      if (mass > THRESHOLD) {
+      if (parts > 1) {
+        const angle =
+            !blackHole && parts < 5
+              ? Math.random() * Math.PI * 2
+              : (Math.random() - 0.5) * Math.min(parts / 10, Math.PI),
+          cos = Math.cos(angle),
+          sin = Math.sin(angle);
+
+        params.vx = vx * cos - vy * sin;
+        params.vy = vx * sin + vy * cos;
+      }
+
+      if (params.radius > THRESHOLD) {
         this.splitParticle(params, blackHole, type || p.getClassName());
       } else {
+        if (blackHole) params.radius = 1;
         this.newParticle([
           Object.assign(params, {
-            radius: blackHole ? 1 : null,
-            immortal: 30 * (Math.random() * 2 + 0.5),
+            immortal: 60 * (Math.random() * 2 + 0.5),
           }),
           type || p.getClassName(),
         ]);
@@ -375,7 +469,7 @@ class SimulationWorker extends SpatialHash {
   }
 
   mergeParticles(mode, ...particles) {
-    const max = particles.reduce((prev, curr) => (prev.mass > curr.mass ? prev : curr));
+    let max = particles.reduce((prev, curr) => (prev.mass > curr.mass ? prev : curr));
 
     let mass = max.mass;
 
@@ -388,36 +482,37 @@ class SimulationWorker extends SpatialHash {
 
     if (mass < 30) mass = 30;
 
-    this.newParticle([
+    const particle = this.newParticle([
       Object.assign({}, max, {
         mass,
         immortal:
           particles.reduce((sum, { immortal }) => sum + immortal, 0) / particles.length,
+        lifespan: particles.reduce((sum, { lifespan }) => sum + lifespan, 0),
       }),
       max.getClassName(),
     ]);
 
+    const grabbed = this.grabbed.find(({ particle }) => particles.includes(particle));
+    if (grabbed?.particle === max) {
+      particle.vx = particle.vy = 0;
+      particle.grabbed = true;
+      grabbed.particle = particle;
+    }
+
     for (const p of particles) this.deleteParticle(p);
   }
 
-  // /**
-  //  * Handles the collision of particles with the mouse
-  //  * @param {Object} param0 An object containing mouse x and y coordinates
-  //  */
-  // mouseCollision({ mx: x, my: y }) {
-  //   for (const near of this.findNearParticles(
-  //     { x, y },
-  //     this.settings.variables.mouse_collision_radius +
-  //       this.settings.constants.max_radius
-  //   ))
-  //     near.mouseCollision({
-  //       x,
-  //       y,
-  //       radius: this.settings.variables.mouse_collision_radius,
-  //       mass: this.settings.variables.mouse_collision_mass,
-  //     });
-  // }
-  // TODO: handle mouse collision by dragging around a solid object (maybe)
+  updateGrab() {
+    if (!this.grabbed.length) return;
+    for (const { particle, xOffset, yOffset } of this.grabbed) {
+      const x = this.grabPosition.x - xOffset,
+        y = this.grabPosition.y - yOffset;
+      particle.x = x;
+      particle.y = y;
+      particle.vx /= 1.1;
+      particle.vy /= 1.1;
+    }
+  }
 
   reset() {
     while (this.particles.length > 0) this.deleteParticle(this.particles[0]);
@@ -473,6 +568,12 @@ class SimulationWorker extends SpatialHash {
     //   particle.projectCollision(near);
 
     this.newClient(particle);
+
+    if (particle.lifespan <= particle.initialLife / 2) {
+      if (particle.mass > this.settings.constants.min_mass * 2)
+        this.splitParticle(particle);
+      else this.deleteParticle(particle);
+    }
   }
 
   #envCalculations(object) {
@@ -508,6 +609,8 @@ class SimulationWorker extends SpatialHash {
 
     for (const o of Object.values(this.env).flat()) this.#envCalculations(o);
 
+    this.updateGrab();
+
     this.renderer.render(this.particles);
     if (this.settings.toggles.animated_environment === true)
       this.envRenderer.render(this.env);
@@ -521,4 +624,4 @@ class SimulationWorker extends SpatialHash {
   }
 }
 
-console.log(new SimulationWorker(settings));
+new SimulationWorker(settings);

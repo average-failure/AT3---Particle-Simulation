@@ -1,8 +1,9 @@
 import { createCheckbox, createSlider, FPS } from "./utils";
 import { settings } from "./settings";
+import { BaseMenu } from "./particle_customisation.mjs";
 
 export class DOMHandler {
-  constructor() {
+  constructor(preview) {
     this.domElements = {
       stats: {
         particleCount: document.querySelector("#stats #particleCount"),
@@ -12,51 +13,110 @@ export class DOMHandler {
       },
       sliders: {},
       toggles: {},
+      particleCustomisation: {},
       pause: document.getElementById("pause"),
     };
 
-    this.paused = false;
+    this.domElements.stats.particleCount.textContent = 0;
+    this.domElements.stats.objectCount.textContent = 0;
 
+    this.paused = false;
+    this.preview = preview;
     (this.fps = new FPS(this.domElements.stats.mainFps)).start();
 
-    this.#initDOMElements();
+    if (!this.preview) this.#initDOMElements();
   }
 
   reset() {
-    for (const element of ["particleCount", "objectCount"]) {
-      this[element] = 0;
-      this.domElements.stats[element].textContent = 0;
-    }
-    this.messageWorker({ onButton: "reset" });
+    this.messageWorker({ reset: true });
   }
 
   onResize() {
+    if (this.preview) return;
     this.overlay.width = window.innerWidth;
     this.overlay.height = window.innerHeight;
     this.ctx.strokeStyle = "#FFFFFF";
+
     this.menuSize = Math.min(window.innerWidth, window.innerHeight) * 0.3;
+    this.domElements.particleCustomisation.content.resize();
   }
 
   async #initDOMElements() {
+    this.#initCustomisationMenu();
+    this.#initMenu();
     const { sliders, toggles } = await import("./dom_elements");
     this.#initSliders(sliders);
     this.#initToggles(toggles);
-    this.#initMenu();
+    {
+      const right = {
+          inner: document.querySelector(".settings.right > .innerSettings"),
+          settings: document.querySelector(".settings.right"),
+          toggled: false,
+        },
+        left = {
+          inner: document.querySelector(".settings.left > .innerSettings"),
+          settings: document.querySelector(".settings.left"),
+          toggled: false,
+        };
+      right.settings.style.setProperty(
+        "transform",
+        `translate(${getComputedStyle(right.inner).width})`
+      );
+      left.settings.style.setProperty(
+        "transform",
+        `translate(${-parseInt(getComputedStyle(left.inner).width, 10)}px)`
+      );
+      document.querySelector(".settings.right > .arrow").addEventListener("click", () => {
+        right.settings.style.setProperty(
+          "transform",
+          `translate(${right.toggled ? getComputedStyle(right.inner).width : "0px"})`
+        );
+        right.toggled = !right.toggled;
+      });
+      document.querySelector(".settings.left > .arrow").addEventListener("click", () => {
+        left.settings.style.setProperty(
+          "transform",
+          `translate(${
+            left.toggled ? -parseInt(getComputedStyle(left.inner).width, 10) : 0
+          }px)`
+        );
+        left.toggled = !left.toggled;
+      });
+    }
+  }
+
+  #initCustomisationMenu() {
+    const menu = document.getElementById("particleCustomisation");
+    menu.popover = "manual";
+    menu.addEventListener("toggle", (e) => {
+      this.customising = !this.customising;
+      if (e.newState !== "open") this.resume();
+      else this.pause();
+    });
+    this.customising = false;
+    this.params = { particle: {} };
+
+    this.domElements.particleCustomisation.content = new BaseMenu(
+      menu,
+      settings.constants,
+      (params) => {
+        this.params.particle = params;
+      }
+    );
+    this.domElements.particleCustomisation.element = menu;
   }
 
   #initSliders(sliders) {
-    for (const [event, settings] of Object.entries(sliders)) {
-      for (const pair of settings) {
-        for (const [setting, options] of Object.entries(pair)) {
-          const slider = createSlider(".settings > #sliders", options, setting);
+    for (const { setting, options } of sliders) {
+      options.onChange = (value) => {
+        this.messageWorker({ updateVariable: [setting, value] });
+      };
 
-          slider.addEventListener(event, () => {
-            this.messageWorker({ updateVariable: [setting, slider.value] });
-          });
-
-          this.domElements.sliders[setting] = slider;
-        }
-      }
+      this.domElements.sliders[setting] = createSlider(
+        ".settings > #sliders",
+        options,
+        setting
+      );
     }
   }
 
@@ -103,8 +163,10 @@ export class DOMHandler {
         items: [{ id: "Random", title: "Random" }],
       },
       { id: "toggleWell", title: "Invert Gravity Wells" },
-
-      { id: "reset", title: "Reset", items: [] },
+      { id: "customise", title: "Customise Particle" },
+      { id: "deleteObject", title: "Delete Objects" },
+      { id: "grab", title: "Grab Particles" },
+      { id: "reset", title: "Reset" },
       { id: "pause", title: "Pause" },
     ];
 
@@ -136,12 +198,22 @@ export class DOMHandler {
       return a.join("");
     };
 
-    for (let i = 0, len = (Math.random() + 0.5) * 10; i < len; ++i) {
-      items[4].items.push({
-        id: "reset" + i,
-        title: Math.random() < 0.75 ? shuffle() : "RESET",
-      });
-    }
+    const populateReset = (layer, recursion) => {
+      layer.items = [];
+      for (let i = 0, len = (Math.random() + 0.5) * 10; i < len; ++i) {
+        layer.items.unshift({
+          id: "reset",
+          title: shuffle(),
+        });
+        if (Math.random() < recursion) populateReset(layer.items[0], recursion - 0.25);
+        else layer.items[0].title = "RESET";
+      }
+    };
+
+    populateReset(
+      items.find(({ id }) => id === "reset"),
+      0.75
+    );
 
     const params = {
       parent: (this.domElements.menu = document.getElementById("wrapper")),
@@ -152,10 +224,9 @@ export class DOMHandler {
 
     const replaceDefault = (i, name) => {
       const item = params.defaultSelection[i].items;
-      item.splice(
-        item.findIndex(({ id }) => id === name),
-        1
-      );
+      const index = item.findIndex(({ id }) => id === name);
+      if (index < 0) return;
+      item.splice(index, 1);
       item.unshift({ id: name, title: name });
     };
 
@@ -165,6 +236,7 @@ export class DOMHandler {
 
     params.onClick = (selection) => {
       if (!selection || !Array.isArray(selection)) return;
+      if (selection.length > 1) selection.pop();
 
       switch (selection[0].id) {
         case "reset":
@@ -173,17 +245,42 @@ export class DOMHandler {
         case "pause":
           this.pause();
           break;
+        case "customise":
+          this.domElements.particleCustomisation.element.showPopover();
+          break;
         default:
           this.selection = selection;
+          if (selection.length > 1) {
+            if (selection[0].id.includes("new")) {
+              this.domElements.currentMode.innerHTML = `Mouse Mode: New ${selection[0].id.slice(
+                3
+              )}<br/>${selection[0].id.slice(3)}: ${selection[1].id}`;
+            } else if (selection[0].id.includes("multi")) {
+              this.domElements.currentMode.innerHTML = `Mouse Mode: Multi ${selection[0].id.slice(
+                5
+              )}<br/>${selection[0].id.slice(5)}: ${selection[1].id}`;
+            }
+          } else if (selection[0].id === "toggleWell") {
+            this.domElements.currentMode.innerHTML = "Mouse Mode: Invert Gravity Wells";
+          } else if (selection[0].id === "deleteObject") {
+            this.domElements.currentMode.innerHTML = "Mouse Mode: Delete Objects";
+          } else if (selection[0].id === "grab") {
+            this.domElements.currentMode.innerHTML = "Mouse Mode: Grab Particles";
+          }
+
           break;
       }
     };
 
     this.menu = new RadialMenu(params);
-    this.selection = [{ id: "mouseMode" }, { id: "newParticle" }, { id: "Particle" }];
+    this.selection = [{ id: "newParticle" }, { id: "Particle" }];
+    this.domElements.currentMode = document.getElementById("currentMode");
+    this.domElements.currentMode.innerHTML = `Mouse Mode: New ${this.selection[0].id.slice(
+      3
+    )}<br/>Particle: ${this.selection[1].id}`;
 
     this.canvas.addEventListener("mousedown", (e) => {
-      if (e.button !== 2) return;
+      if (e.button !== 2 || this.customising) return;
 
       if (this.menu.currentMenu) {
         this.menu.close();
@@ -210,6 +307,8 @@ export class DOMHandler {
     const envCanvas = document.getElementById("envCanvas");
     if (envCanvas) this.envCanvas = envCanvas;
     else document.body.appendChild((this.envCanvas = document.createElement("canvas")));
+
+    if (this.preview) return;
 
     const overlay = document.getElementById("overlay");
     if (overlay) this.overlay = overlay;
@@ -245,21 +344,10 @@ export class DOMHandler {
       });
     }
 
-    window.addEventListener("focus", this.resume.bind(this));
-    window.addEventListener("blur", this.pause.bind(this));
+    // window.addEventListener("focus", this.resume.bind(this));
+    // window.addEventListener("blur", this.pause.bind(this));
 
     this.#handleMouse();
-
-    // this.canvas.addEventListener("mousemove", (event) => {
-    //   const bounds = this.canvas.getBoundingClientRect();
-    //   this.messageWorker({
-    //     mouseCollision: {
-    //       mx: event.clientX - bounds.left,
-    //       my: event.clientY - bounds.top,
-    //     },
-    //   });
-    // });
-    // TODO
   }
 
   pause() {
@@ -274,13 +362,22 @@ export class DOMHandler {
     this.domElements.pause.style.pointerEvents = "all";
     this.domElements.pause.style.opacity = 1;
 
-    this.messageWorker({ pause: null });
+    this.messageWorker({ pause: true });
 
-    for (const element of document.body.children)
-      if (element !== this.domElements.pause) element.classList.add("blur");
+    for (const element of document.body.children) {
+      if (
+        element === this.domElements.pause ||
+        [...this.domElements.particleCustomisation.element.children].includes(element) ||
+        element === this.domElements.particleCustomisation.element
+      ) {
+        continue;
+      }
+      element.classList.add("blur");
+    }
   }
 
   resume() {
+    if (this.domElements.particleCustomisation.element.matches(":popover-open")) return;
     this.paused = false;
     if (this.mouseDown2 === true) this.mouseDown = true;
     if (this.mouseEvent === "multi") this.multi();
@@ -290,7 +387,7 @@ export class DOMHandler {
     this.domElements.pause.style.pointerEvents = "none";
     this.domElements.pause.style.opacity = 0;
 
-    this.messageWorker({ resume: null });
+    this.messageWorker({ resume: true });
 
     const blur = document.getElementsByClassName("blur");
     while (blur.length) blur[0].classList.remove("blur");
@@ -312,7 +409,10 @@ export class DOMHandler {
       const angle = Math.random() * 2 * Math.PI,
         hyp = Math.sqrt(Math.random()) * (multiRadius - settings.constants.max_radius);
       this.newParticle(
-        { x: c[0] + Math.cos(angle) * hyp, y: c[1] + Math.sin(angle) * hyp },
+        Object.assign({}, this.params.particle, {
+          x: c[0] + Math.cos(angle) * hyp,
+          y: c[1] + Math.sin(angle) * hyp,
+        }),
         this.selection[1].id
       );
       requestAnimationFrame(this.multi);
@@ -331,7 +431,13 @@ export class DOMHandler {
     const mousedown = (event) => {
       event.preventDefault();
 
-      if (this.mouseDown === true || event.button !== 0 || this.menu.currentMenu) return;
+      if (
+        this.mouseDown === true ||
+        event.button !== 0 ||
+        this.menu?.currentMenu ||
+        this.customising
+      )
+        return;
 
       m = getMousePos(event);
 
@@ -363,8 +469,14 @@ export class DOMHandler {
           this.ctx.stroke();
           break;
         case "toggleWell":
-          this.mouseEvent = null;
-          this.messageWorker({ toggleWell: m });
+          this.mouseEvent = "well";
+          break;
+        case "deleteObject":
+          this.mouseEvent = "delObj";
+          break;
+        case "grab":
+          this.mouseEvent = "grab";
+          this.messageWorker({ grabParticle: m });
           break;
         default:
           break;
@@ -437,6 +549,9 @@ export class DOMHandler {
           this.ctx.arc(c[0], c[1], multiRadius, 0, Math.PI * 2);
           this.ctx.stroke();
           break;
+        case "grab":
+          this.messageWorker({ moveGrab: m });
+          break;
         default:
           break;
       }
@@ -463,7 +578,7 @@ export class DOMHandler {
                   x: pre[0],
                   y: pre[1],
                   r: d,
-                  strength: d ** 1.5,
+                  strength: d ** 1.5 * 200,
                 },
                 "GravityWell"
               );
@@ -475,7 +590,7 @@ export class DOMHandler {
                   x: pre[0],
                   y: pre[1],
                   r: d,
-                  strength: d ** 2,
+                  strength: d ** 2 * 300,
                 },
                 "BlackHole"
               );
@@ -503,11 +618,30 @@ export class DOMHandler {
               break;
           }
           break;
+        case "well":
+          this.messageWorker({ toggleWell: m });
+          break;
+        case "delObj":
+          this.deleteObject(...m);
+          break;
+        case "grab":
+          this.messageWorker({ releaseParticle: true });
+          break;
         case "particle":
-          this.newParticle(
-            { x: pre[0], y: pre[1], vx: dx, vy: dy },
-            this.selection[1].id
-          );
+          const params = {
+            x: pre[0],
+            y: pre[1],
+            vx: dx,
+            vy: dy,
+            mass: this.params.particle.mass,
+            radius: this.params.particle.radius,
+            lifespan: this.params.particle.lifespan,
+            colour: this.params.particle.colour,
+            paths: this.params.particle.paths,
+          };
+          if (this.params.particle.vx) params.vx += this.params.particle.vx;
+          if (this.params.particle.vy) params.vy += this.params.particle.vy;
+          this.newParticle(params, this.selection[1].id);
           break;
         default:
           break;
@@ -522,5 +656,14 @@ export class DOMHandler {
     this.canvas.addEventListener("mousemove", mousemove);
 
     this.canvas.addEventListener("mouseup", mouseup);
+  }
+
+  dispose() {
+    if (this.preview) return;
+    for (const element of this.domElements.sliders
+      .concat(this.domElements.toggles)
+      .flat())
+      element.remove();
+    this.domElements.particleCustomisation.content.dispose();
   }
 }

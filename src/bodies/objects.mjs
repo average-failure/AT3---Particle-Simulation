@@ -10,15 +10,18 @@ import {
 
 const initRectShape = (x, y, w, h) => {
   const defaultSize = 50;
-  const threshold = 25;
+  const threshold = defaultSize / 2;
+  const randomSize = 200;
 
   if (!w || Math.abs(w) < threshold) {
-    w = defaultSize;
+    if (!w) w = randomSize * (Math.random() + 0.5);
+    else w = defaultSize;
     x -= w / 2;
   }
 
   if (!h || Math.abs(h) < threshold) {
-    h = defaultSize;
+    if (!h) h = randomSize * (Math.random() + 0.5);
+    else h = defaultSize;
     y -= h / 2;
   }
 
@@ -107,7 +110,7 @@ export class Circle extends Environment {
   constructor(id, settings, params) {
     super(id, settings, params);
 
-    this.r = params.r || 15;
+    this.r = params.r || 100 * (Math.random() + 0.5);
 
     (this.path = new Path2D()).arc(0, 0, this.r, 0, 2 * Math.PI);
   }
@@ -144,8 +147,8 @@ export class GravityWell extends Environment {
   constructor(id, settings, params) {
     super(id, settings, params);
 
-    this.strength = params.strength || 1000;
-    this.r = params.r || 100;
+    this.strength = params.strength || 100000;
+    this.r = params.r || 100 * (Math.random() + 0.5);
     this.force = params.force || [-1, 1][~~(Math.random() * 2)];
 
     (this.path = new Path2D()).arc(0, 0, this.r, 0, 2 * Math.PI);
@@ -354,7 +357,7 @@ export class BlackHole extends Environment {
   constructor(id, settings, params) {
     super(id, settings, params);
 
-    this.r = params.r || 50;
+    this.r = params.r || 100 * (Math.random() + 0.5);
     this.strength = params.strength || this.r ** 2;
 
     this.#genPath();
@@ -417,9 +420,11 @@ export class BlackHole extends Environment {
     );
 
     p.r = Math.min(
-      Math.ceil((p.mass / this.settings.constants.mass_radius_ratio) * distanceRatio),
+      Math.ceil((p.mass / p.ratio) * distanceRatio),
       this.settings.constants.max_radius
     );
+
+    (p.path = new Path2D()).arc(0, 0, p.r, 0, Math.PI * 2);
   }
 
   #attract(p) {
@@ -427,13 +432,13 @@ export class BlackHole extends Environment {
       repulse(this, p, this.settings, 0.0001);
       return "EXPLODE";
     }
-    return attract(this, p, this.settings, 1, true, 0.4 * (Math.random() + 0.8));
+    return attract(this, p, this.settings, 1, true, 0.2 * (Math.random() + 0.5));
   }
 
   update(particles) {
     const explodeList = [];
     for (const p of particles) {
-      if (this.#attract(p) === "EXPLODE" && Math.random() < 0.95) explodeList.push(p);
+      if (this.#attract(p) === "EXPLODE" && Math.random() < 0.99) explodeList.push(p);
       if (detectCircleCollision(this, p, true)) {
         p.collision = 2;
         this.#distort(p);

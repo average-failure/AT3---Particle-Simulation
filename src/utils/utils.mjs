@@ -228,8 +228,11 @@ export const createSlider = (parentSelector, options, id) => {
       name = "",
       onChange,
       optionals = "",
-    } = options,
-    parentElement = document.querySelector(parentSelector);
+    } = options || {},
+    parentElement =
+      typeof parentSelector === "string"
+        ? document.querySelector(parentSelector)
+        : parentSelector;
 
   const container = document.createElement("div");
   container.classList.add("sliderContainer");
@@ -239,26 +242,150 @@ export const createSlider = (parentSelector, options, id) => {
     container.innerHTML = `
       <label for="${id}Slider" class="sliderLabel">${name}</label>
       <input id="${id}Slider" class="slider" type="range" min="${min}" max="${max}" value="${value}" step="${step}" ${optionals} />
-      <div class="sliderValue">${value}</div>
+      <input type="number" class="sliderValue" min="${min}" max="${max}" value="${value}" step="${step}" />
     `;
   else
     container.innerHTML = `
       <div class="sliderLabel">${name}</div>
       <input class="slider" type="range" min="${min}" max="${max}" value="${value}" step="${step}" ${optionals} />
-      <div class="sliderValue">${value}</div>
+      <input type="number" class="sliderValue" min="${min}" max="${max}" value="${value}" step="${step}" />
     `;
   parentElement.appendChild(container);
 
   const slider = container.querySelector(".slider"),
-    sliderValue = container.querySelector(".sliderValue"),
-    change = function () {
-      sliderValue.textContent = this.value;
-      onChange?.(this.value);
-    };
-  slider.addEventListener("input", change);
-  slider.addEventListener("change", change);
+    sliderValue = container.querySelector(".sliderValue");
 
-  return container.querySelector(id ? `#${id}Slider` : ".slider");
+  slider.addEventListener("input", function () {
+    sliderValue.value = this.value;
+    onChange?.(this.value);
+  });
+
+  sliderValue.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" || e.key === "Enter") this.blur();
+  });
+
+  sliderValue.addEventListener("input", function (e) {
+    if (e.key !== "Backspace" && e.key !== "Delete") {
+      if (this.value > max) this.value = max;
+      else if (this.value < min) this.value = min;
+    }
+
+    slider.value = this.value;
+    onChange?.(this.value);
+  });
+
+  return slider;
+};
+
+/**
+ * Creates a text input element as a child of the given parent
+ * @param {String} parentSelector A string containing a css selector for the parent element
+ * @param {Object} options An object containing options for the input
+ * @param {String} id The id of the input element
+ * @returns The input element
+ */
+export const createTextInput = (parentSelector, options = {}, id) => {
+  const parentElement =
+    typeof parentSelector === "string"
+      ? document.querySelector(parentSelector)
+      : parentSelector;
+
+  const container = document.createElement("div");
+  container.classList.add("inputContainer");
+  container.classList.add("container");
+
+  const { name, units, onChange, type, max, min } = options;
+
+  let allowedOptions = ["value", "placeholder"];
+  if (type?.toLowerCase() === "number") allowedOptions.push("min", "max", "step");
+
+  let text = "";
+  for (const [key, value] of Object.entries(options).filter(([o]) =>
+    allowedOptions.includes(o)
+  )) {
+    text += ` ${key}="${value}"`;
+  }
+
+  if (id)
+    container.innerHTML = `
+      ${name ? `<label for="${id}Input" class="inputLabel">${name}</label>` : ""}
+      <input id="${id}Input" class="textInput" type="number" ${text} />
+      ${units ? `<div class="units">${units}</div>` : ""}
+    `;
+  else
+    container.innerHTML = `
+      ${name ? `<div class="inputLabel">${name}</div>` : ""}
+      <input class="textInput" type="number" ${text} />
+      ${units ? `<div class="units">${units}</div>` : ""}
+    `;
+
+  parentElement.appendChild(container);
+
+  const input = container.querySelector(".textInput");
+
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" || e.key === "Enter") this.blur();
+  });
+
+  if (type === "number" && (max || min))
+    input.addEventListener("input", function (e) {
+      if (e.key !== "Backspace" && e.key !== "Delete") {
+        if (this.value > max) this.value = max;
+        else if (this.value < min) this.value = min;
+      }
+
+      onChange?.(this.value);
+    });
+  else if (onChange)
+    input.addEventListener("input", function () {
+      onChange(this.value);
+    });
+
+  return input;
+};
+
+/**
+ * Creates a colour picker element as a child of the given parent
+ * @param {String} parentSelector A string containing a css selector for the parent element
+ * @param {Object} options An object containing options for the colour picker
+ * @param {String} id The id of the colour picker element
+ * @returns The colour picker element
+ */
+export const createColourInput = (parentSelector, options = {}, id) => {
+  const parentElement =
+    typeof parentSelector === "string"
+      ? document.querySelector(parentSelector)
+      : parentSelector;
+
+  const container = document.createElement("div");
+  container.classList.add("colourContainer");
+  container.classList.add("container");
+
+  const onChange = options.onChange;
+
+  const { name, value } = options;
+
+  if (id)
+    container.innerHTML = `
+      ${name ? `<label for="${id}Input" class="colourLabel">${name}</label>` : ""}
+      <input id="${id}Input" class="colourInput" type="color" value="${
+      value || "#000000"
+    }" />
+    `;
+  else
+    container.innerHTML = `
+      ${name ? `<div class="colourLabel">${name}</div>` : ""}
+      <input class="colourInput" type="color" value="${value || "#000000"}"/>
+    `;
+  parentElement.appendChild(container);
+
+  const input = container.querySelector(".colourInput");
+  if (onChange)
+    input.addEventListener("input", function () {
+      onChange(this.value);
+    });
+
+  return input;
 };
 
 /**
@@ -269,8 +396,11 @@ export const createSlider = (parentSelector, options, id) => {
  * @returns The checkbox element
  */
 export const createCheckbox = (parentSelector, options, id) => {
-  const { value = "", name = "", optionals = "" } = options,
-    parentElement = document.querySelector(parentSelector);
+  const { value, name, optionals = "", onChange } = options,
+    parentElement =
+      typeof parentSelector === "string"
+        ? document.querySelector(parentSelector)
+        : parentSelector;
 
   const container = document.createElement("div");
   container.classList.add("checkboxContainer");
@@ -278,21 +408,27 @@ export const createCheckbox = (parentSelector, options, id) => {
 
   if (id)
     container.innerHTML = `
-      <label for="${id}Checkbox" class="checkboxLabel">${name}</label>
+      ${name ? `<label for="${id}Checkbox" class="checkboxLabel">${name}</label>` : ""}
       <input id="${id}Checkbox" class="checkbox" type="checkbox" ${
       value === true ? "checked" : ""
     } ${optionals} />
     `;
   else
     container.innerHTML = `
-      <div class="checkboxLabel">${name}</div>
+      ${name ? `<div class="checkboxLabel">${name}</div>` : ""}
       <input class="checkbox" type="checkbox" ${
         value === true ? "checked" : ""
       } ${optionals} />
     `;
   parentElement.appendChild(container);
 
-  return container.querySelector(id ? `#${id}Checkbox` : ".checkbox");
+  const checkbox = container.querySelector(".checkbox");
+  if (onChange)
+    checkbox.addEventListener("change", function () {
+      onChange(this.checked);
+    });
+
+  return checkbox;
 };
 
 /**
@@ -304,7 +440,10 @@ export const createCheckbox = (parentSelector, options, id) => {
  */
 export const createSelect = (parentSelector, options, id) => {
   const { value, name = "", children = [], optionals = "" } = options,
-    parentElement = document.querySelector(parentSelector);
+    parentElement =
+      typeof parentSelector === "string"
+        ? document.querySelector(parentSelector)
+        : parentSelector;
 
   const container = document.createElement("div");
   container.classList.add("selectContainer");
@@ -341,7 +480,10 @@ export const createSelect = (parentSelector, options, id) => {
  */
 export const createButton = (parentSelector, options, id) => {
   const { optionals = "", name = "", content = "" } = options,
-    parentElement = document.querySelector(parentSelector);
+    parentElement =
+      typeof parentSelector === "string"
+        ? document.querySelector(parentSelector)
+        : parentSelector;
 
   const container = document.createElement("div");
   container.classList.add("buttonContainer");
@@ -387,8 +529,6 @@ export const circleCollision = (c1, c2, mode, cor) => {
   const angle = Math.atan2(dy, dx);
 
   switch (mode) {
-    case "none":
-      break;
     case "this":
       c1.x = c2.x + r * Math.cos(angle);
       c1.y = c2.y + r * Math.sin(angle);
@@ -398,6 +538,7 @@ export const circleCollision = (c1, c2, mode, cor) => {
       c2.y = c1.y - r * Math.sin(angle);
       break;
     case "both":
+      // TODO: do this properly
       const temp = [c1.x, c1.y];
 
       c1.x = c2.x + r * Math.cos(angle);
@@ -543,3 +684,54 @@ export const test = (testFn, outerIterations = 10, innerIterations = 10000, ...a
   }
   return totalTime / outerIterations;
 };
+
+export const hslToHex = (h, s, l) => {
+  if (typeof h === "string")
+    [h, s, l] = h.substring(4).split(")")[0].split(",").map(parseFloat);
+
+  // Converts hsl to hex... the name is self explanatory and idk how this works
+  // icl7126 @ https://stackoverflow.com/a/44134328
+  l /= 100;
+  const a = (s * Math.min(l, 1 - l)) / 100;
+  const f = (n) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color)
+      .toString(16)
+      .padStart(2, "0"); // convert to Hex and prefix "0" if needed
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+};
+
+export class ListenerHandler {
+  constructor() {
+    this.handlers = {};
+  }
+
+  addListener(node, event, handler, capture = false) {
+    if (!(event in this.handlers)) this.handlers[event] = [];
+
+    this.handlers[event].push({ node, handler, capture });
+    node.addEventListener(event, handler, capture);
+  }
+
+  removeListeners(targetNode, event) {
+    for (const { node, handler, capture } of this.handlers[event].filter(
+      ({ node }) => node === targetNode
+    )) {
+      node.removeEventListener(event, handler, capture);
+    }
+
+    this.handlers[event] = this.handlers[event].filter(({ node }) => node !== targetNode);
+  }
+
+  removeAllListeners() {
+    for (const [event, value] of Object.entries(this.handlers)) {
+      for (const { node, handler, capture } of value) {
+        node.removeEventListener(event, handler, capture);
+      }
+    }
+
+    this.handlers = {};
+  }
+}

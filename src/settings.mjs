@@ -1,6 +1,10 @@
 export const settings = {
   constants: {
-    cell_size: 15, // * need to find what is the optimal cell size
+    get cell_size() {
+      delete this.cell_size;
+      this.cell_size = (this.max_radius - this.min_radius) / 2;
+      return this.cell_size;
+    },
     max_radius: 100,
     min_radius: 3,
     get max_mass() {
@@ -12,6 +16,16 @@ export const settings = {
       delete this.min_mass;
       this.min_mass = this.min_radius * this.mass_radius_ratio;
       return this.min_mass;
+    },
+    get max_random_mass() {
+      delete this.max_random_mass;
+      this.max_random_mass = this.max_mass / 4;
+      return this.max_random_mass;
+    },
+    get max_random_radius() {
+      delete this.max_random_radius;
+      this.max_random_radius = this.max_radius / 4;
+      return this.max_random_radius;
     },
     mass_radius_ratio: 10,
   },
@@ -29,7 +43,7 @@ export const settings = {
     repulsion_radius: 0.5,
     repulsion_strength: 100,
     dt: 0.1,
-    coefficient_of_restitution: 0.99,
+    coefficient_of_restitution: 0.95,
     drag: 0.999,
     flow_size: 10,
     flow_strength: 3,
@@ -39,9 +53,12 @@ export const settings = {
     softening_constant: true,
     coefficient_of_restitution: true,
     drag: false,
+    lifespan: true,
     show_velocity: false,
     show_mass: false,
+    show_lifespan: false,
     animated_environment: false,
+    dynamic_font_colour: true,
   },
   pause: false,
 };

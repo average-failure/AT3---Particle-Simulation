@@ -3,7 +3,7 @@
   transition: all 0.2s;
   font-family: "Roboto Slab";
 }
-canvas {
+body > canvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -18,19 +18,46 @@ canvas {
   width: fit-content;
   height: fit-content;
   background-color: rgba(150, 150, 150, 0.4);
-  padding: 20px;
   color: white;
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  min-height: 0;
   z-index: 10;
+  display: grid;
+  grid-template-columns: auto auto;
+}
+.settings > * {
+  padding: 20px;
+}
+.arrow {
+  width: 100%;
+  height: 100%;
+  padding: 15px;
+  margin: 0px;
+  display: flex;
+  cursor: pointer;
+}
+.arrow:hover {
+  filter: invert(40%);
+}
+.arrow > p {
+  font-size: 3vmin;
+  margin: auto;
 }
 .settings.left {
   margin: auto auto auto 0;
 }
 .settings.right {
   margin: auto 0 auto auto;
+}
+.settings.left > .innerSettings {
+  padding-right: 0px;
+}
+.settings.right > .innerSettings {
+  padding-left: 0px;
+}
+.settings.left > .arrow {
+  padding-left: 10px;
+}
+.settings.right > .arrow {
+  padding-right: 10px;
 }
 .container {
   margin: 10px;
@@ -40,6 +67,15 @@ canvas {
 #stats {
   position: absolute;
   left: 0;
+  top: 0;
+  background-color: rgba(150, 150, 150, 0.4);
+  padding: 20px;
+  color: white;
+  z-index: 10;
+}
+#currentMode {
+  position: absolute;
+  right: 0;
   top: 0;
   background-color: rgba(150, 150, 150, 0.4);
   padding: 20px;
@@ -76,3 +112,199 @@ canvas {
 .statContainer > p {
   display: inline;
 }
+#particleCustomisation {
+  --w: 50%;
+  width: var(--w);
+  height: 80%;
+  background-color: #333;
+  overflow: hidden;
+  text-align: center;
+  color: white;
+}
+#particleCustomisation::backdrop {
+  backdrop-filter: blur(5px);
+}
+#particleCustomisation canvas {
+  margin-top: 5%;
+  border: 3px solid white;
+}
+div.container > * {
+  display: inline;
+}
+div.canvasContainer > div.checkboxContainer {
+  position: absolute;
+  top: calc(3% + 16px);
+  right: 10%;
+  width: fit-content;
+}
+div.drawCtrlContainer:popover-open {
+  --w2: calc(var(--w) - 5%);
+  width: var(--w2);
+  height: 32%;
+  background-color: #444;
+  color: white;
+  inset: unset;
+  left: calc(var(--w) - var(--w2) / 2);
+  bottom: 17.5%;
+}
+button.doneButton {
+  --w: 50%;
+  position: absolute;
+  width: var(--w);
+  left: calc(var(--w) / 2);
+  height: 5%;
+  bottom: 2%;
+  background-color: rgb(52, 221, 52);
+  border-radius: 10px;
+  border: 3px solid rgb(35, 86, 35);
+  filter: drop-shadow(0px 0px 6px rgb(52, 221, 52));
+}
+button.doneButton:hover {
+  filter: brightness(0.9) drop-shadow(0px 0px 10px rgb(52, 221, 52));
+}
+button.doneButton:active {
+  filter: brightness(1.2) drop-shadow(0px 0px 15px rgb(33, 225, 33));
+}
+button.resetDrawing {
+  --w: 90%;
+  position: absolute;
+  width: var(--w);
+  left: calc(50% - var(--w) / 2);
+  bottom: 3%;
+  background-color: rgb(221, 52, 52);
+  border-radius: 10px;
+  border: 3px solid rgb(86, 35, 35);
+  filter: drop-shadow(0px 0px 6px rgb(221, 52, 52));
+}
+button.resetDrawing:hover {
+  filter: brightness(0.9) drop-shadow(0px 0px 10px rgb(221, 52, 52));
+}
+button.resetDrawing:active {
+  filter: brightness(1.2) drop-shadow(0px 0px 15px rgb(225, 33, 33));
+}
+.warning {
+  background-color: rgb(255, 0, 0);
+  border: 10px solid rgb(86, 35, 35);
+  border-radius: 10px;
+  box-shadow: 0px 0px 100px 80px rgba(221, 52, 52, 0.8);
+  transform: scale(0.5);
+}
+.warning::backdrop {
+  background-color: rgba(221, 52, 52, 0.2);
+}
+#welcome {
+  background: none;
+  border: none;
+  text-align: center;
+  transform: scale(2);
+  filter: hue-rotate(10deg);
+  text-shadow: rgba(200, 200, 200, 0.6) 1px 0 10px;
+  animation-name: pulseColourShadow;
+  animation-duration: 10s;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+@keyframes pulseColourShadow {
+  from {
+    filter: hue-rotate(0deg);
+    text-shadow: rgba(113, 147, 198, 0.6) 0 0 10px;
+  }
+  to {
+    filter: hue-rotate(360deg);
+    text-shadow: rgba(200, 200, 200, 1) 0 0 20px;
+  }
+}
+#welcome > h1 {
+  color: rgb(143, 170, 171);
+}
+#welcome > h2 {
+  color: rgb(22, 174, 179);
+}
+#welcome::backdrop {
+  background-color: rgba(150, 150, 150, 0.4);
+  backdrop-filter: blur(5px);
+}
+body {
+  overflow: hidden;
+}
+button {
+  cursor: pointer;
+}
+#tutorial {
+  position: absolute;
+  inset: 0;
+  color: rgb(22, 174, 179);
+  margin: auto;
+  z-index: 99;
+  width: fit-content;
+  height: fit-content;
+  pointer-events: none;
+  background-color: rgba(253, 254, 255, 0.8);
+  border-radius: 10px;
+  padding: 0.6em 2em;
+  border: none;
+  outline: none;
+  background: #111;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  display: none;
+  text-align: center;
+  max-width: 80%;
+}
+#tutorial > p {
+  font-size: 1vmin;
+}
+/* Button 85 @ https://getcssscan.com/css-buttons-examples?ref=beautifulboxshadow-bottom */
+/* ^ from here */
+#tutorial:before {
+  content: "";
+  background: linear-gradient(
+    45deg,
+    #ff0000,
+    #ff7300,
+    #fffb00,
+    #48ff00,
+    #00ffd5,
+    #002bff,
+    #7a00ff,
+    #ff00c8,
+    #ff0000
+  );
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  background-size: 400%;
+  z-index: -1;
+  filter: blur(5px);
+  -webkit-filter: blur(5px);
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  animation: glowing 20s linear infinite;
+  transition: opacity 0.3s ease-in-out;
+  border-radius: 10px;
+}
+@keyframes glowing {
+  0% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 400% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+#tutorial:after {
+  z-index: -1;
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: #222;
+  left: 0;
+  top: 0;
+  border-radius: 10px;
+}
+/* To here */
