@@ -5,7 +5,7 @@
  * @returns An random colour in RGB format
  */
 const randColour = (mix, mixEffect = 2) => {
-  const colour = [randInt(256), randInt(256), randInt(256)];
+  const colour = [randRangeInt(256), randRangeInt(256), randRangeInt(256)];
 
   if (mix)
     colour.forEach((elem, idx) => {
