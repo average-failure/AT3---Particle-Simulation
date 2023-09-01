@@ -1,6 +1,6 @@
-import { createCheckbox, createSlider, FPS } from "../utils";
-import { settings } from "../settings";
-import { BaseMenu } from "./particle_customisation";
+import { createCheckbox, createSlider, FPS } from "../utils/index.js";
+import { settings } from "../settings.js";
+import { BaseMenu } from "./particle_customisation.js";
 
 export class DOMHandler {
   constructor(preview) {
@@ -44,7 +44,7 @@ export class DOMHandler {
   async #initDOMElements() {
     this.#initCustomisationMenu();
     this.#initMenu();
-    const { sliders, toggles } = await import("./dom_elements");
+    const { sliders, toggles } = await import("./dom_elements.js");
     this.#initSliders(sliders);
     this.#initToggles(toggles);
     {
@@ -161,8 +161,8 @@ export class DOMHandler {
   }
 
   async #initMenu() {
-    const { RadialMenu } = await import("../radial_menu/RadialMenu"),
-      { PARTICLES, OBJECTS } = await import("../bodies");
+    const { RadialMenu } = await import("../radial_menu/RadialMenu.js"),
+      { PARTICLES, OBJECTS } = await import("../bodies/index.js");
 
     const items = [
       {

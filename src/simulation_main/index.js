@@ -1,3 +1,3 @@
-export * from "./dom_elements";
-export * from "./dom_handler";
-export * from "./particle_customisation";
+export * from "./dom_elements.js";
+export * from "./dom_handler.js";
+export * from "./particle_customisation.js";

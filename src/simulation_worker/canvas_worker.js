@@ -1,8 +1,8 @@
-import { PARTICLES, OBJECTS, FlowControl, Environment } from "../bodies";
-import { FPS, randRangeInt } from "../utils";
-import { SpatialHash } from "./spatial_hash";
-import { settings } from "../settings";
-import { Renderer, EnvironmentRenderer } from "../renderers";
+import { PARTICLES, OBJECTS, FlowControl, Environment } from "../bodies/index.js";
+import { FPS, randRangeInt } from "../utils/index.js";
+import { SpatialHash } from "./spatial_hash.js";
+import { settings } from "../settings/index.js";
+import { Renderer, EnvironmentRenderer } from "../renderers/index.js";
 
 class SimulationWorker extends SpatialHash {
   /**

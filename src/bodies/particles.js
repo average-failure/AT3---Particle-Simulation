@@ -4,7 +4,7 @@ import {
   circleCollision,
   detectCircleCollision,
   randRangeInt,
-} from "../utils";
+} from "../utils/index.js";
 
 export class Particle {
   /**

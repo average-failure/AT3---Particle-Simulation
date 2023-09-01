@@ -1,2 +1,2 @@
-export * from "./gravity_calculations";
-export * from "./utils";
+export * from "./gravity_calculations.js";
+export * from "./utils.js";
