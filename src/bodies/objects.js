@@ -1,4 +1,4 @@
-import { Environment } from "./environment";
+import { Environment } from "./environment.js";
 import {
   attract,
   repulse,
@@ -6,7 +6,7 @@ import {
   detectCircleCollision,
   randBias,
   randHex,
-} from "../utils";
+} from "../utils/index.js";
 
 const initRectShape = (x, y, w, h) => {
   const defaultSize = 50;

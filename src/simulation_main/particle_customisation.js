@@ -1,11 +1,11 @@
-import { PARTICLES } from "../bodies";
+import { PARTICLES } from "../bodies/index.js";
 import {
   createSlider,
   createTextInput,
   createColourInput,
   hslToHex,
   createCheckbox,
-} from "../utils";
+} from "../utils/index.js";
 
 export class BaseMenu {
   constructor(parent, constants, callback) {

@@ -1,4 +1,4 @@
-export * as PARTICLES from "./particles";
-export * as OBJECTS from "./objects";
-export * from "./flow_control";
-export * from "./environment";
+export * as PARTICLES from "./particles.js";
+export * as OBJECTS from "./objects.js";
+export * from "./flow_control.js";
+export * from "./environment.js";

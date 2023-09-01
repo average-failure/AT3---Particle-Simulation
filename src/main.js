@@ -1,4 +1,4 @@
-import { DOMHandler } from "./simulation_main";
+import { DOMHandler } from "./simulation_main/index.js";
 
 class SimulationMain extends DOMHandler {
   constructor(preview) {
