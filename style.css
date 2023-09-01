@@ -157,10 +157,10 @@ div.draw-ctrl-container:popover-open {
   bottom: 17.5%;
 }
 button.done-button {
-  --w: 50%;
+  --w: 70%;
   position: absolute;
   width: var(--w);
-  left: calc(var(--w) / 2);
+  left: calc(50% - var(--w) / 2);
   height: 5%;
   bottom: 2%;
   background-color: rgb(52, 221, 52);
@@ -190,6 +190,13 @@ button.reset-drawing:hover {
 }
 button.reset-drawing:active {
   filter: brightness(1.2) drop-shadow(0px 0px 15px rgb(225, 33, 33));
+}
+button.reset-drawing.reset-particle {
+  --w: 50%;
+  bottom: 8%;
+  width: var(--w);
+  left: calc(50% - var(--w) / 2);
+  height: 4%;
 }
 .warning {
   background-color: rgb(255, 0, 0);

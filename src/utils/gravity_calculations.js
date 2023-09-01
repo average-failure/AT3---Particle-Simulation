@@ -5,7 +5,7 @@ function gravity(mode, p1, p2, strength, settings, blackHole) {
 
   const f =
     ((p1.strength *
-      2.5 *
+      100 *
       settings.variables[mode < 0 ? "repulsion_strength" : "attraction_strength"]) /
       (dSq *
         Math.sqrt(

@@ -12,9 +12,9 @@ export class BaseMenu {
     this.parent = parent;
     this.constants = constants;
 
-    if (!(this.canvasContainer = parent.querySelector(".canvasContainer"))) {
+    if (!(this.canvasContainer = parent.querySelector(".canvas-container"))) {
       this.canvasContainer = parent.appendChild(document.createElement("div"));
-      this.canvasContainer.className = "canvasContainer";
+      this.canvasContainer.className = "canvas-container";
     }
     parent.appendChild((this.heading = document.createElement("h2")));
     this.heading.innerHTML = "Customise your particle... do <i>whatever</i> you want 😧";
@@ -23,14 +23,14 @@ export class BaseMenu {
     this.parentWidth = parseInt(this.parentStyle.width, 10) / 100;
     this.parentHeight = parseInt(this.parentStyle.height, 10) / 100;
 
-    if (!(this.drawCtrlContainer = parent.querySelector(".drawCtrlContainer"))) {
+    if (!(this.drawCtrlContainer = parent.querySelector(".draw-ctrl-container"))) {
       this.drawCtrlContainer = parent.appendChild(document.createElement("div"));
-      this.drawCtrlContainer.className = "drawCtrlContainer";
+      this.drawCtrlContainer.className = "draw-ctrl-container";
     }
     this.drawCtrlContainer.innerHTML = "<h2>🖌️ Draw Style 🖌️</h2>";
 
     this.doneButton = parent.appendChild(document.createElement("button"));
-    this.doneButton.className = "doneButton";
+    this.doneButton.className = "done-button";
     this.doneButton.textContent = "Finish Customisation";
 
     this.doneButton.addEventListener("click", () => {
@@ -52,6 +52,23 @@ export class BaseMenu {
       }
 
       callback(params);
+    });
+
+    this.resetButton = parent.appendChild(document.createElement("button"));
+    this.resetButton.textContent = "Reset Particle";
+    this.resetButton.className = "reset-drawing reset-particle";
+    this.resetButton.addEventListener("click", () => {
+      this.inputs.colour.value = this.colour = hslToHex(
+        PARTICLES.Particle.getColour(0, 0)
+      );
+      this.radius = 0;
+      this.mass = 0;
+      this.inputs.radius.value = null;
+      this.inputs.mass.value = null;
+      this.inputs.lifespan.value = null;
+      this.clearCanvas();
+      this.paths.length = 0;
+      this.draw();
     });
 
     this.paths = [];
@@ -136,7 +153,7 @@ export class BaseMenu {
         toggle: createCheckbox(
           this.canvasContainer,
           {
-            name: "Free Draw: ",
+            name: "Free Draw",
             value: (this.drawing.toggle = false),
             onChange: (value) => {
               this.drawing.toggle = value;
@@ -189,17 +206,17 @@ export class BaseMenu {
       },
     };
 
-    this.drawCtrlContainer.appendChild((this.warning = document.createElement("h1")));
+    this.warning = this.drawCtrlContainer.appendChild(document.createElement("h1"));
     this.warning.popover = "auto";
     this.warning.innerHTML =
       "<h1>⚠️ BEWARE: drawing is laggy 😭</h1><p>Click anywhere to close...</p>";
     this.warning.className = "warning";
 
-    this.drawCtrlContainer.appendChild(
-      (this.inputs.drawing.reset = document.createElement("button"))
+    this.inputs.drawing.reset = this.drawCtrlContainer.appendChild(
+      document.createElement("button")
     );
     this.inputs.drawing.reset.textContent = "Clear Drawing";
-    this.inputs.drawing.reset.className = "resetDrawing";
+    this.inputs.drawing.reset.className = "reset-drawing";
     this.inputs.drawing.reset.addEventListener("click", () => {
       this.clearCanvas();
       this.paths.length = 0;
