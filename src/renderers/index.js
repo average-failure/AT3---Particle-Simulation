@@ -1,3 +1,3 @@
-export * from "./environment_renderer.mjs";
-export * from "./render_base.mjs";
-export * from "./renderer.mjs";
+export * from "./environment_renderer";
+export * from "./render_base";
+export * from "./renderer";
