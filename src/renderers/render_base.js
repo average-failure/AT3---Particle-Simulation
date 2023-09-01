@@ -19,8 +19,6 @@ export class RenderBase {
   resizeCanvas(width, height) {
     this.width = this.canvas.width = this.drawCanvas.width = width;
     this.height = this.canvas.height = this.drawCanvas.height = height;
-    // this.drawCtx.textAlign = "center";
-    // this.drawCtx.textBaseline = "middle";
   }
 
   translate(x, y) {

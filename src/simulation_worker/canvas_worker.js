@@ -385,24 +385,6 @@ class SimulationWorker extends SpatialHash {
   }
 
   splitParticle(p, blackHole, type) {
-    // const masses = [],
-    //   min = this.settings.constants.min_mass,
-    //   parts = Math.min(
-    //     ~~((r / Math.sqrt(r)) * (Math.random() * 0.5 + 0.5)) + 2,
-    //     Math.max(r / (min * 2), 2)
-    //   ),
-    //   m = r - min * parts,
-    //   c = ~~(m / parts),
-    //   d = c * 0.3;
-
-    // for (let i = 0; i < parts; i++) {
-    //   if (r < min) break;
-    //   const offset = ~~((Math.random() - 0.5) * 2 * d);
-    //   const p = c + offset + min;
-    //   masses.push(p);
-    //   r -= p;
-    // }
-
     const LOSS = 0.95;
     const THRESHOLD = this.settings.constants.max_radius / 4;
 
@@ -560,12 +542,6 @@ class SimulationWorker extends SpatialHash {
         particle.detectCollision(near);
       }
     }
-
-    // for (const near of this.findNearParticles(
-    //   particle,
-    //   Math.sqrt(particle.vx ** 2 + particle.vy ** 2)
-    // ))
-    //   particle.projectCollision(near);
 
     this.newClient(particle);
 

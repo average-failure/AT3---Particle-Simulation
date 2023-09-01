@@ -1,5 +1,5 @@
-import { createCheckbox, createSlider, FPS } from "./utils";
-import { settings } from "./settings";
+import { createCheckbox, createSlider, FPS } from "../utils";
+import { settings } from "../settings";
 import { BaseMenu } from "./particle_customisation";
 
 export class DOMHandler {
@@ -161,8 +161,8 @@ export class DOMHandler {
   }
 
   async #initMenu() {
-    const { RadialMenu } = await import("./radial_menu/RadialMenu"),
-      { PARTICLES, OBJECTS } = await import("./bodies");
+    const { RadialMenu } = await import("../radial_menu/RadialMenu"),
+      { PARTICLES, OBJECTS } = await import("../bodies");
 
     const items = [
       {
@@ -361,9 +361,6 @@ export class DOMHandler {
         resume = false;
       });
     }
-
-    // window.addEventListener("focus", this.resume.bind(this));
-    // window.addEventListener("blur", this.pause.bind(this));
 
     this.#handleMouse();
   }

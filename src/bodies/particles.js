@@ -73,115 +73,13 @@ export class Particle {
     return `hsl(${colourComp},100%,${Math.min(colourComp / 2 + 30, 80)}%)`;
   }
 
-  /* pointParticle(p, px, py) {
-    return (p.x - px) ** 2 + (p.y - py) ** 2 <= p.r ** 2;
-  }
-
-  linePoint(l1x, l1y, l2x, l2y, px, py, buffer = 0.1) {
-    const d = (px - l1x) ** 2 + (py - l1y) ** 2 + ((px - l2x) ** 2 + (py - l2y) ** 2);
-    const len = (l1x - l2x) ** 2 + (l1y - l2y) ** 2;
-    return d >= len - buffer ** 2 && d <= len + buffer ** 2;
-  }
-
-  lineParticle(p, l1x, l1y, l2x, l2y) {
-    if (this.pointParticle(p, l1x, l1y) || this.pointParticle(p, l2x, l2y)) return true;
-
-    const len = (l1x - l2x) ** 2 + (l1y - l2y) ** 2;
-
-    const dot = ((p.x - l1x) * (l2x - l1x) + (p.y - l1y) * (l2y - l1y)) / len;
-
-    const cx = l1x + dot * (l2x - l1x),
-      cy = l1y + dot * (l2y - l1y);
-
-    if (!this.linePoint(l1x, l1y, l2x, l2y, cx, cy)) return false;
-
-    return (cx - p.x) ** 2 + (cy - p.y) ** 2 <= p.r ** 2;
-  } */
-
-  /* sweptAABB(p) {
-    const rvx = p.vx - this.vx,
-      rvy = p.vy - this.vy;
-
-    const dx = p.x - this.x,
-      dy = p.y - this.y;
-
-    const timeToCollision = (dx * rvx + dy * rvy) / (rvx ** 2 + rvy ** 2);
-
-    if (timeToCollision < 0 || timeToCollision > 1) return false;
-
-    const cx = this.x + this.vx * timeToCollision,
-      cy = this.y + this.vy * timeToCollision;
-
-    const dSq = (dx - rvx * timeToCollision) ** 2 + (dy - rvy * timeToCollision) ** 2;
-
-    const colliding = dSq <= (this.r + p.r) ** 2;
-
-    return { colliding, cx, cy };
-  } */
-
-  /* fastCollision(p) {
-    const rvx = p.vx - this.vx,
-      rvy = p.vy - this.vy;
-
-    const rd = Math.sqrt(rvx ** 2 + rvy ** 2);
-
-    const rSum = this.r + p.r;
-
-    const minDist = rSum * 0.1;
-
-    if (rd < minDist) {
-      const penDepth = minDist - rd;
-
-      const pdx = rvx / rd,
-        pdy = rvy / rd;
-
-      this.x -= pdx * penDepth * 0.5;
-      this.x -= pdy * penDepth * 0.5;
-      p.x += pdx * penDepth * 0.5;
-      p.x += pdy * penDepth * 0.5;
-    }
-  } */
-
-  // projectCollision(p) {
-  //   /* this.projection.set(p.x - this.x, p.y - this.y);
-  //   this.line.set(this.vx, this.vy);
-  //   const normal = this.line.getNormal();
-  //   const projectionOnNormal = this.projection.projectOn(normal);
-  //   console.log(projectionOnNormal);
-  //   if (Math.abs(projectionOnNormal) <= p.r) {
-  //     this.collide(p, {
-  //       dx: this.line.x,
-  //       dy: this.line.y,
-  //       d: projectionOnNormal,
-  //     });
-  //   }
-  //   // ! projection not working */
-
-  //   // this.fastCollision(p);
-
-  //   /* const { colliding, cx, cy } = this.sweptAABB(p) || {};
-
-  //   if (colliding) {
-  //     console.log("colliding");
-  //     this.x = cx;
-  //     this.y = cy;
-  //   } */
-
-  //   /* if (this.lineParticle(p, this.x, this.y, this.x - this.vx, this.y - this.vy)) {
-  //     const dx = this.x - p.x,
-  //       dy = this.y - p.y;
-  //     const dSq = dx ** 2 + dy ** 2;
-  //     this.collide(p, { dx, dy, dSq });
-  //   } */
-  // }
-
   detectCollision(p) {
     if (this.grabbed) {
       const collision = circleCollision(
         this,
         p,
         "other",
-        this.settings.toggles.coefficient_of_restitution
+        this.settings.toggles.collision_elasticity
           ? this.settings.variables.coefficient_of_restitution
           : 1
       );
@@ -198,7 +96,7 @@ export class Particle {
       this,
       p,
       "this",
-      this.settings.toggles.coefficient_of_restitution
+      this.settings.toggles.collision_elasticity
         ? this.settings.variables.coefficient_of_restitution
         : 1
     );
@@ -220,7 +118,7 @@ export class Particle {
 
   #checkBoundaries(width, height) {
     let diff;
-    const cor = this.settings.toggles.coefficient_of_restitution
+    const cor = this.settings.toggles.collision_elasticity
       ? this.settings.variables.coefficient_of_restitution
       : 1;
 

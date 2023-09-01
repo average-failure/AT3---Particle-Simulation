@@ -1,11 +1,11 @@
-import { PARTICLES } from "./bodies";
+import { PARTICLES } from "../bodies";
 import {
   createSlider,
   createTextInput,
   createColourInput,
   hslToHex,
   createCheckbox,
-} from "./utils";
+} from "../utils";
 
 export class BaseMenu {
   constructor(parent, constants, callback) {
@@ -13,7 +13,7 @@ export class BaseMenu {
     this.constants = constants;
 
     if (!(this.canvasContainer = parent.querySelector(".canvasContainer"))) {
-      parent.appendChild((this.canvasContainer = document.createElement("div")));
+      this.canvasContainer = parent.appendChild(document.createElement("div"));
       this.canvasContainer.className = "canvasContainer";
     }
     parent.appendChild((this.heading = document.createElement("h2")));
@@ -24,12 +24,12 @@ export class BaseMenu {
     this.parentHeight = parseInt(this.parentStyle.height, 10) / 100;
 
     if (!(this.drawCtrlContainer = parent.querySelector(".drawCtrlContainer"))) {
-      parent.appendChild((this.drawCtrlContainer = document.createElement("div")));
+      this.drawCtrlContainer = parent.appendChild(document.createElement("div"));
       this.drawCtrlContainer.className = "drawCtrlContainer";
     }
     this.drawCtrlContainer.innerHTML = "<h2>🖌️ Draw Style 🖌️</h2>";
 
-    parent.appendChild((this.doneButton = document.createElement("button")));
+    this.doneButton = parent.appendChild(document.createElement("button"));
     this.doneButton.className = "doneButton";
     this.doneButton.textContent = "Finish Customisation";
 

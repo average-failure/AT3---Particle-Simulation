@@ -65,7 +65,7 @@ export class Rectangle extends Environment {
   }
 
   detectCollision(p) {
-    const cor = this.settings.toggles.coefficient_of_restitution
+    const cor = this.settings.toggles.collision_elasticity
       ? this.settings.variables.coefficient_of_restitution
       : 1;
 
@@ -128,7 +128,7 @@ export class Circle extends Environment {
       this,
       p,
       "other",
-      this.settings.toggles.coefficient_of_restitution
+      this.settings.toggles.collision_elasticity
         ? this.settings.variables.coefficient_of_restitution
         : 1
     );

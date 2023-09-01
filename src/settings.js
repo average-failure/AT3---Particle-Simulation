@@ -51,7 +51,7 @@ export const settings = {
   toggles: {
     gravity: true,
     softening_constant: true,
-    coefficient_of_restitution: true,
+    collision_elasticity: true,
     drag: false,
     lifespan: true,
     show_velocity: false,

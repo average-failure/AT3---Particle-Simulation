@@ -1,4 +1,4 @@
-import { DOMHandler } from "./dom_handler";
+import { DOMHandler } from "./simulation_main";
 
 class SimulationMain extends DOMHandler {
   constructor(preview) {
@@ -38,7 +38,7 @@ class SimulationMain extends DOMHandler {
   #initWorker() {
     this.initCanvas();
 
-    this.worker = new Worker("src/simulation/canvas_worker", { type: "module" });
+    this.worker = new Worker("src/simulation_worker/canvas_worker", { type: "module" });
     this.worker.onmessage = this.#onMessage.bind(this);
 
     if (!this.canvas.transferControlToOffscreen) {
@@ -57,9 +57,7 @@ class SimulationMain extends DOMHandler {
 
   onResize() {
     super.onResize();
-    // const pixelRatio = window.devicePixelRatio,
-    //   width = (this.canvas.clientWidth * pixelRatio) | 0,
-    //   height = (this.canvas.clientHeight * pixelRatio) | 0;
+
     this.messageWorker({
       resizeCanvas: [window.innerWidth, window.innerHeight],
     });

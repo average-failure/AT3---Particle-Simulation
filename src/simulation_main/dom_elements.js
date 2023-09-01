@@ -1,19 +1,8 @@
-import { settings } from "./settings";
+import { settings } from "../settings";
 
 const { variables: v, toggles: t } = settings;
 
 export const sliders = [
-  {
-    setting: "time_factor",
-    options: {
-      value: v.time_factor,
-      min: 1,
-      max: 500,
-      step: 1,
-      unit: "%",
-      name: "Simulation Speed",
-    },
-  },
   {
     setting: "gravity",
     options: {
@@ -46,6 +35,17 @@ export const sliders = [
       value: v.softening_constant,
       step: 0.01,
       name: "Softening Constant",
+    },
+  },
+  {
+    setting: "time_factor",
+    options: {
+      value: v.time_factor,
+      min: 1,
+      max: 500,
+      step: 1,
+      unit: "%",
+      name: "Simulation Speed",
     },
   },
   {
@@ -99,8 +99,8 @@ export const sliders = [
 export const toggles = [
   { setting: "gravity", options: { value: t.gravity, name: "Gravity" } },
   {
-    setting: "coefficient_of_restitution",
-    options: { value: t.coefficient_of_restitution, name: "Collision Elasticity" },
+    setting: "collision_elasticity",
+    options: { value: t.collision_elasticity, name: "Collision Elasticity" },
   },
   { setting: "drag", options: { value: t.drag, name: "Drag" } },
   {

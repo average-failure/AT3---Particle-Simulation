@@ -4,7 +4,6 @@
  * @param {Number} mixEffect How much the provided mix affects the random colour
  * @returns An random colour in RGB format
  */
-// * UNUSED
 const randColour = (mix, mixEffect = 2) => {
   const colour = [randInt(256), randInt(256), randInt(256)];
 
@@ -26,7 +25,6 @@ const randColour = (mix, mixEffect = 2) => {
  * @param {Number} mixEffect How much the provided mix affects the random colour
  * @returns An random colour in hexadecimal format
  */
-// * UNUSED
 export const randHex = (mix, mixEffect) => {
   const colour = randColour(mix, mixEffect);
 
@@ -36,99 +34,12 @@ export const randHex = (mix, mixEffect) => {
 };
 
 /**
- * Generates a random rgb colour
- * @param {Array} mix An array containing r, g, and b values to mix with the random colour
- * @param {Number} mixEffect How much the provided mix affects the random colour
- * @returns An random colour in css rgb format
- */
-// * UNUSED
-export const randRGB = (mix, mixEffect) => {
-  const colour = randColour(mix, mixEffect);
-
-  return `rgb(${colour[0]},${colour[1]},${colour[2]})`;
-};
-
-/**
- * Generates a random hsl colour
- * @param {Array} mix An array containing r, g, and b values to mix with the random colour
- * @param {Number} mixEffect How much the provided mix affects the random colour
- * @returns An random colour in hsl format
- */
-// * UNUSED
-export const randHSL = (mix, mixEffect) => {
-  const colour = randColour(mix, mixEffect);
-
-  // Convert rgb to hsl
-  // Crashalot @ https://stackoverflow.com/a/58426404
-
-  // Scale r, g, b into a ratio
-  let r = (colour[0] /= 255),
-    g = (colour[1] /= 255),
-    b = (colour[2] /= 255);
-
-  // Find greatest and smallest channel values
-  let cmin = Math.min(r, g, b),
-    cmax = Math.max(r, g, b),
-    delta = cmax - cmin,
-    h = 0,
-    s = 0,
-    l = 0;
-
-  // Calculate hue
-  // No difference
-  if (delta == 0) h = 0;
-  // Red is max
-  else if (cmax == r) h = ((g - b) / delta) % 6;
-  // Green is max
-  else if (cmax == g) h = (b - r) / delta + 2;
-  // Blue is max
-  else h = (r - g) / delta + 4;
-
-  h = Math.round(h * 60);
-
-  // Make negative hues positive behind 360°
-  if (h < 0) h += 360;
-
-  // Calculate lightness
-  l = (cmax + cmin) / 2;
-
-  // Calculate saturation
-  s = delta == 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
-
-  // Multiply l and s by 100
-  s = +(s * 100).toFixed(1);
-  l = +(l * 100).toFixed(1);
-
-  return `hsl(${h},${s}%,${l}%)`;
-};
-
-/**
- * Generates a random integer
- * @param {Number} max The maximum number to generate
- * @param {Number} offset The amount to offset the random number by
- * @returns A random integer
- */
-// * UNUSED
-export const randInt = (max, offset = 0) => ~~(Math.random() * max) + offset;
-
-/**
  * Generates a random integer between two provided numbers
  * @param {Number} max The maximum number
  * @param {Number} min The minimum number
  * @returns A random integer between max and min
  */
 export const randRangeInt = (max, min = 0) => ~~(Math.random() * (max - min) + min);
-
-/**
- * Generates a random number between two provided numbers
- * @param {Number} max The maximum number
- * @param {Number} min The minimum number
- * @param {Number} round The number of decimals to round to
- * @returns A random number rounded to round between max and min
- */
-// * UNUSED
-export const randRange = (max, min = 0, round) =>
-  Number((Math.random() * (max - min) + min).toFixed(round));
 
 /**
  * Generates a random number biased to a given number
@@ -147,20 +58,6 @@ export const randBias = (max, min = 0, bias = 0, strength = 1, round) => {
 };
 
 /**
- * Generates a random integer biased to a given number
- * @param {Number} max The maximum number
- * @param {Number} min The minimum number
- * @param {Number} bias The number that the random is biased to
- * @param {Number} strength The strength of the bias
- * @returns A random integer biased towards the provided bias
- */
-// * UNUSED
-export const randBiasInt = (max, min = 0, bias = 0, strength = 1) => {
-  const mix = Math.random() * strength;
-  return ~~((Math.random() * (max - min) + min) * (1 - mix) + bias * mix);
-};
-
-/**
  * Generates a random coordinate inside a given circle
  * @param {Number} x The x coordinate of the center of the circle
  * @param {Number} y The y coordinate of the center of the circle
@@ -172,44 +69,6 @@ export const randCircle = (x, y, maxR, minR = 0) => {
   const angle = Math.random() * 2 * Math.PI,
     hyp = Math.random() * (maxR - minR) + minR;
   return [x + Math.cos(angle) * hyp, y + Math.sin(angle) * hyp];
-};
-
-// * UNUSED
-export const randBool = () => Math.random() < 0.5;
-
-/**
- * Returns a promise that resolves on an event
- * @param {EventTarget} item The item to attach the event listener to
- * @param {String} event A string containing the event to listen to
- * @returns A promise that will resolve when the listener is triggered
- */
-// Get a Promise from an event...
-// Claude @ https://stackoverflow.com/a/70789108
-// * UNUSED
-export const getPromiseFromEvent = (item, event) =>
-  new Promise((resolve) => {
-    const listener = () => {
-      item.removeEventListener(event, listener);
-      resolve();
-    };
-    item.addEventListener(event, listener);
-  });
-
-/**
- * Waits for a given function to return true
- * @param {Function} conditionFunction The function to wait for to be true
- * @returns A promise that resolves when conditionFunction is true
- */
-// Waits for conditionFunction to be true
-// Lightbeard @ https://stackoverflow.com/a/52652681
-// * UNUSED
-export const waitFor = (conditionFunction) => {
-  const poll = (resolve) => {
-    if (conditionFunction()) resolve();
-    else setTimeout(() => poll(resolve), 400);
-  };
-
-  return new Promise(poll);
 };
 
 /**
@@ -443,80 +302,6 @@ export const createCheckbox = (parentSelector, options, id) => {
   return { checkbox, container: container.querySelector(".toggle-container") };
 };
 
-/**
- * Creates a select element as a child of the given parent
- * @param {String} parentSelector A string containing a css selector for the parent element
- * @param {Object} options An object containing options for the dropdown
- * @param {String} id The id of the select element
- * @returns The select element
- */
-export const createSelect = (parentSelector, options, id) => {
-  const { value, name = "", children = [], optionals = "" } = options,
-    parentElement =
-      typeof parentSelector === "string"
-        ? document.querySelector(parentSelector)
-        : parentSelector;
-
-  const container = document.createElement("div");
-  container.classList.add("select-container");
-  container.classList.add("container");
-
-  if (id)
-    container.innerHTML = `
-      <label for="${id}-select" class="select-label">${name}</label>
-      <select id="${id}-select" class="select" ${optionals} ></select>
-    `;
-  else
-    container.innerHTML = `
-      <div class="select-label">${name}</div>
-      <select class="select" ${optionals} ></select>
-    `;
-
-  const element = container.querySelector(".select");
-
-  for (const child of children) element.options.add(new Option(child));
-
-  if (value) element.value = value;
-
-  parentElement.appendChild(container);
-
-  return element;
-};
-
-/**
- * Creates a button as a child of the given parent
- * @param {String} parentSelector A string containing a css selector for the parent element
- * @param {Object} options An object containing options for the dropdown
- * @param {String} id The id of the button element
- * @returns The button element
- */
-export const createButton = (parentSelector, options, id) => {
-  const { optionals = "", name = "", content = "" } = options,
-    parentElement =
-      typeof parentSelector === "string"
-        ? document.querySelector(parentSelector)
-        : parentSelector;
-
-  const container = document.createElement("div");
-  container.classList.add("button-container");
-  container.classList.add("container");
-
-  if (id)
-    container.innerHTML = `
-      <label for="${id}-button" class="button-label">${name}</label>
-      <button id="${id}-button" class="button" ${optionals} >${content}</button>
-    `;
-  else
-    container.innerHTML = `
-      <div class="button-label">${name}</div>
-      <button class="button" ${optionals} >${content}</button>
-    `;
-
-  parentElement.appendChild(container);
-
-  return container.querySelector(".button");
-};
-
 export const detectCircleCollision = (c1, c2, threshold) => {
   const dx = c1.x - c2.x,
     dy = c1.y - c2.y;
@@ -606,74 +391,6 @@ export class FPS {
   }
 }
 
-// * UNUSED
-export const complementaryHexColour = (hex) => {
-  // Deekshant Kumar @ https://stackoverflow.com/a/67425060
-
-  let r = hex.length == 4 ? parseInt(hex[1] + hex[1], 16) : parseInt(hex.slice(1, 3), 16);
-  let g = hex.length == 4 ? parseInt(hex[2] + hex[2], 16) : parseInt(hex.slice(3, 5), 16);
-  let b = hex.length == 4 ? parseInt(hex[3] + hex[3], 16) : parseInt(hex.slice(5), 16);
-
-  [r, g, b] = complementaryRGBColour(r, g, b);
-
-  return (
-    "#" +
-    (r < 16 ? "0" + r.toString(16) : r.toString(16)) +
-    (g < 16 ? "0" + g.toString(16) : g.toString(16)) +
-    (b < 16 ? "0" + b.toString(16) : b.toString(16))
-  );
-};
-
-// * UNUSED
-export const complementaryRGBColour = (r, g, b) => {
-  // Deekshant Kumar @ https://stackoverflow.com/a/67425060
-
-  if (Math.max(r, g, b) == Math.min(r, g, b)) {
-    return [255 - r, 255 - g, 255 - b];
-  } else {
-    (r /= 255), (g /= 255), (b /= 255);
-    const max = Math.max(r, g, b),
-      min = Math.min(r, g, b),
-      d = max - min;
-    let h,
-      l = (max + min) / 2,
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-    switch (max) {
-      case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / d + 2;
-        break;
-      case b:
-        h = (r - g) / d + 4;
-        break;
-    }
-
-    h = Math.round(h * 60 + 180) % 360;
-    h /= 360;
-
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    };
-
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-
-    r = hue2rgb(p, q, h + 1 / 3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1 / 3);
-
-    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-  }
-};
-
 export const complementaryHSLColour = (h, s, l) => {
   if (typeof h === "string")
     [h, s, l] = h.substring(4).split(")")[0].split(",").map(parseFloat);
@@ -682,19 +399,6 @@ export const complementaryHSLColour = (h, s, l) => {
   if (h > 360) h -= 360;
 
   return `hsl(${h},${s}%,${100 - l}%)`;
-};
-
-// * UNUSED
-export const test = (testFn, outerIterations = 10, innerIterations = 10000, ...args) => {
-  if (typeof testFn !== "function") return;
-  let previousTime = performance.now(),
-    totalTime = 0;
-  for (let n = 0; n < outerIterations; ++n) {
-    previousTime = performance.now();
-    for (let i = 0; i < innerIterations; ++i) testFn(...args);
-    totalTime += performance.now() - previousTime;
-  }
-  return totalTime / outerIterations;
 };
 
 export const hslToHex = (h, s, l) => {
@@ -714,36 +418,3 @@ export const hslToHex = (h, s, l) => {
   };
   return `#${f(0)}${f(8)}${f(4)}`;
 };
-
-export class ListenerHandler {
-  constructor() {
-    this.handlers = {};
-  }
-
-  addListener(node, event, handler, capture = false) {
-    if (!(event in this.handlers)) this.handlers[event] = [];
-
-    this.handlers[event].push({ node, handler, capture });
-    node.addEventListener(event, handler, capture);
-  }
-
-  removeListeners(targetNode, event) {
-    for (const { node, handler, capture } of this.handlers[event].filter(
-      ({ node }) => node === targetNode
-    )) {
-      node.removeEventListener(event, handler, capture);
-    }
-
-    this.handlers[event] = this.handlers[event].filter(({ node }) => node !== targetNode);
-  }
-
-  removeAllListeners() {
-    for (const [event, value] of Object.entries(this.handlers)) {
-      for (const { node, handler, capture } of value) {
-        node.removeEventListener(event, handler, capture);
-      }
-    }
-
-    this.handlers = {};
-  }
-}
