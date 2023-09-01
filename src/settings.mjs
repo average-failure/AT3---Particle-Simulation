@@ -30,21 +30,21 @@ export const settings = {
     mass_radius_ratio: 10,
   },
   variables: {
-    /* mouse_collision_radius: 100,
-    get mouse_collision_mass() {
-      return this.mouse_collision_radius * this.mouse_mass_radius_ratio;
-    },
-    mouse_mass_radius_ratio: 10,
-    mouse_collision_velocity: 0.01, */
     gravity: 9.8,
     softening_constant: 0.15,
     attraction_radius: 0.1,
     attraction_strength: 50,
     repulsion_radius: 0.5,
     repulsion_strength: 100,
-    dt: 0.1,
-    coefficient_of_restitution: 0.95,
-    drag: 0.999,
+    get dt() {
+      return this.time_factor / 1000;
+    },
+    time_factor: 100,
+    get coefficient_of_restitution() {
+      return this.collision_elasticity / 100;
+    },
+    collision_elasticity: 95,
+    drag: 3,
     flow_size: 10,
     flow_strength: 3,
   },

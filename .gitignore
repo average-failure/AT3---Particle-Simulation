@@ -2,3 +2,4 @@ test.html
 TODO.txt
 .vscode
 .vite
+*.json

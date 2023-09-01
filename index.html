@@ -17,24 +17,24 @@
     <script src="https://cdn.jsdelivr.net/gh/Kaiido/path2D-inspection@master/build/path2D-inspection.min.js"></script>
   </head>
   <body>
-    <canvas id="envCanvas" class="noPointer"></canvas>
+    <canvas id="env-canvas" class="no-pointer"></canvas>
     <canvas id="canvas">No canvas available</canvas>
-    <canvas id="overlay" class="noPointer"></canvas>
+    <canvas id="overlay" class="no-pointer"></canvas>
 
     <div id="stats">
-      <div class="statContainer">
+      <div class="stat-container">
         Particles:
-        <p id="particleCount">0</p>
+        <p id="particle-count">0</p>
       </div>
-      <div class="statContainer">
+      <div class="stat-container">
         Objects:
-        <p id="objectCount">0</p>
+        <p id="object-count">0</p>
       </div>
-      <div class="statContainer">
+      <div class="stat-container">
         Main Thread Fps:
         <p id="mfps">0</p>
       </div>
-      <div class="statContainer">
+      <div class="stat-container">
         Worker Thread Fps:
         <p id="wfps">0</p>
       </div>
@@ -44,21 +44,21 @@
       <div class="arrow">
         <p>🞂</p>
       </div>
-      <div id="sliders" class="innerSettings"></div>
+      <div id="sliders" class="inner-settings"></div>
     </div>
 
     <div class="settings left">
-      <div id="checkboxes" class="innerSettings"></div>
+      <div id="checkboxes" class="inner-settings"></div>
       <div class="arrow">
         <p>🞀</p>
       </div>
     </div>
 
-    <div id="currentMode"></div>
+    <div id="current-mode"></div>
 
     <div id="wrapper"></div>
 
-    <div id="particleCustomisation"></div>
+    <div id="particle-customisation"></div>
 
     <div id="pause" class="hidden">
       <h1>

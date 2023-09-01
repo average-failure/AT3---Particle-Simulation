@@ -255,8 +255,9 @@ export class Particle {
       this.vy += this.settings.variables.gravity * this.settings.variables.dt;
 
     if (this.settings.toggles.drag) {
-      this.vx *= this.settings.variables.drag;
-      this.vy *= this.settings.variables.drag;
+      const drag = 1 + (this.settings.variables.drag * this.settings.variables.dt) / 100;
+      this.vx /= drag;
+      this.vy /= drag;
     }
 
     if (this.getClassName() !== "Particle") return;
@@ -269,8 +270,8 @@ export class Particle {
   }
 
   #updateStats() {
-    if (this.immortal > 0) this.immortal -= 10 * this.settings.variables.dt;
-    if (this.collision > 0) this.collision -= 10 * this.settings.variables.dt;
+    if (this.immortal > 0) this.immortal -= this.settings.variables.time_factor;
+    if (this.collision > 0) this.collision -= this.settings.variables.time_factor;
     if (this.lifespan > 0 && this.settings.toggles.lifespan && !this.grabbed) {
       if (this.lifespan > 50000)
         this.lifespan -=

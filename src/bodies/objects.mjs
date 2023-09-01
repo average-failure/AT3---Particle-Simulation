@@ -375,12 +375,7 @@ export class BlackHole extends Environment {
   #genPath() {
     (this.path = new Path2D()).arc(0, 0, this.r, 0, 2 * Math.PI);
 
-    this.extra = {
-      colour: [],
-      rotation: [],
-      rotateSpeed: null,
-      path: [],
-    };
+    this.extra = [];
 
     const max = this.r * 0.75,
       min = this.r / 8,
@@ -395,12 +390,14 @@ export class BlackHole extends Environment {
         Math.random() * Math.PI * 2,
         Math.random() * Math.PI * 2
       );
-      this.extra.path.push(path);
-      this.extra.colour.push(randHex([149, 120, 56], 4));
-      this.extra.rotation.push((Math.random() - 0.5) / 10);
+      const rot = (Math.random() - 0.5) / 10;
+      this.extra.push({
+        path,
+        colour: randHex([149, 120, 56], 4),
+        rotation: rot,
+        rotateSpeed: rot,
+      });
     }
-
-    this.extra.rotateSpeed = this.extra.rotation.slice();
   }
 
   #genFill(ctx) {

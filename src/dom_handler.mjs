@@ -1,19 +1,19 @@
 import { createCheckbox, createSlider, FPS } from "./utils";
 import { settings } from "./settings";
-import { BaseMenu } from "./particle_customisation.mjs";
+import { BaseMenu } from "./particle_customisation";
 
 export class DOMHandler {
   constructor(preview) {
     this.domElements = {
       stats: {
-        particleCount: document.querySelector("#stats #particleCount"),
-        objectCount: document.querySelector("#stats #objectCount"),
+        particleCount: document.querySelector("#stats #particle-count"),
+        objectCount: document.querySelector("#stats #object-count"),
         mainFps: document.querySelector("#stats #mfps"),
         workerFps: document.querySelector("#stats #wfps"),
       },
       sliders: {},
       toggles: {},
-      particleCustomisation: {},
+      pCustom: {},
       pause: document.getElementById("pause"),
     };
 
@@ -38,7 +38,7 @@ export class DOMHandler {
     this.ctx.strokeStyle = "#FFFFFF";
 
     this.menuSize = Math.min(window.innerWidth, window.innerHeight) * 0.3;
-    this.domElements.particleCustomisation.content.resize();
+    this.domElements.pCustom.content.resize();
   }
 
   async #initDOMElements() {
@@ -49,12 +49,12 @@ export class DOMHandler {
     this.#initToggles(toggles);
     {
       const right = {
-          inner: document.querySelector(".settings.right > .innerSettings"),
+          inner: document.querySelector(".settings.right > .inner-settings"),
           settings: document.querySelector(".settings.right"),
           toggled: false,
         },
         left = {
-          inner: document.querySelector(".settings.left > .innerSettings"),
+          inner: document.querySelector(".settings.left > .inner-settings"),
           settings: document.querySelector(".settings.left"),
           toggled: false,
         };
@@ -86,7 +86,7 @@ export class DOMHandler {
   }
 
   #initCustomisationMenu() {
-    const menu = document.getElementById("particleCustomisation");
+    const menu = document.getElementById("particle-customisation");
     menu.popover = "manual";
     menu.addEventListener("toggle", (e) => {
       this.customising = !this.customising;
@@ -96,14 +96,14 @@ export class DOMHandler {
     this.customising = false;
     this.params = { particle: {} };
 
-    this.domElements.particleCustomisation.content = new BaseMenu(
+    this.domElements.pCustom.content = new BaseMenu(
       menu,
       settings.constants,
       (params) => {
         this.params.particle = params;
       }
     );
-    this.domElements.particleCustomisation.element = menu;
+    this.domElements.pCustom.element = menu;
   }
 
   #initSliders(sliders) {
@@ -121,25 +121,43 @@ export class DOMHandler {
   }
 
   async #initToggles(toggles) {
-    for (const [event, settings] of Object.entries(toggles)) {
-      for (const pair of settings) {
-        for (const [setting, options] of Object.entries(pair)) {
-          const checkbox = createCheckbox(".settings > #checkboxes", options, setting),
-            sliderList = this.domElements.sliders[setting]?.parentElement.classList;
+    for (const { setting, options } of toggles) {
+      const { slider, sliderValue } = this.domElements.sliders[setting] || {};
 
-          if (!options.value) sliderList?.add("hidden");
+      options.hr = true;
+      options.onChange = (value) => {
+        this.messageWorker({
+          updateToggle: [setting, value],
+        });
+        if (slider && sliderValue) {
+          slider.parentElement.classList.toggle("disabled");
+          slider.disabled = !value;
+          sliderValue.disabled = !value;
+        }
+        this.domElements.toggles[setting].container.parentElement.classList.toggle(
+          "disabled"
+        );
+      };
 
-          checkbox.addEventListener(event, () => {
-            this.messageWorker({
-              updateToggle: [setting, checkbox.checked],
-            });
-            sliderList?.[checkbox.checked === true ? "remove" : "add"]("hidden");
-          });
+      this.domElements.toggles[setting] = createCheckbox(
+        ".settings > #checkboxes",
+        options,
+        setting
+      );
 
-          this.domElements.toggles[setting] = checkbox;
+      if (!options.value) {
+        this.domElements.toggles[setting].container.parentElement.classList.toggle(
+          "disabled"
+        );
+        if (slider && sliderValue) {
+          slider.parentElement.classList.toggle("disabled");
+          slider.disabled = true;
+          sliderValue.disabled = true;
         }
       }
     }
+
+    document.querySelector(".settings > #checkboxes > hr:last-child").remove();
   }
 
   async #initMenu() {
@@ -246,7 +264,7 @@ export class DOMHandler {
           this.pause();
           break;
         case "customise":
-          this.domElements.particleCustomisation.element.showPopover();
+          this.domElements.pCustom.element.showPopover();
           break;
         default:
           this.selection = selection;
@@ -274,7 +292,7 @@ export class DOMHandler {
 
     this.menu = new RadialMenu(params);
     this.selection = [{ id: "newParticle" }, { id: "Particle" }];
-    this.domElements.currentMode = document.getElementById("currentMode");
+    this.domElements.currentMode = document.getElementById("current-mode");
     this.domElements.currentMode.innerHTML = `Mouse Mode: New ${this.selection[0].id.slice(
       3
     )}<br/>Particle: ${this.selection[1].id}`;
@@ -302,17 +320,17 @@ export class DOMHandler {
   initCanvas() {
     const canvas = document.getElementById("canvas");
     if (canvas) this.canvas = canvas;
-    else document.body.appendChild((this.canvas = document.createElement("canvas")));
+    else this.canvas = document.body.appendChild(document.createElement("canvas"));
 
-    const envCanvas = document.getElementById("envCanvas");
+    const envCanvas = document.getElementById("env-canvas");
     if (envCanvas) this.envCanvas = envCanvas;
-    else document.body.appendChild((this.envCanvas = document.createElement("canvas")));
+    else this.envCanvas = document.body.appendChild(document.createElement("canvas"));
 
     if (this.preview) return;
 
     const overlay = document.getElementById("overlay");
     if (overlay) this.overlay = overlay;
-    else document.body.appendChild((this.overlay = document.createElement("canvas")));
+    else this.overlay = document.body.appendChild(document.createElement("canvas"));
     this.ctx = this.overlay.getContext("2d");
     this.ctx.strokeStyle = "#FFFFFF";
 
@@ -367,8 +385,8 @@ export class DOMHandler {
     for (const element of document.body.children) {
       if (
         element === this.domElements.pause ||
-        [...this.domElements.particleCustomisation.element.children].includes(element) ||
-        element === this.domElements.particleCustomisation.element
+        [...this.domElements.pCustom.element.children].includes(element) ||
+        element === this.domElements.pCustom.element
       ) {
         continue;
       }
@@ -377,7 +395,7 @@ export class DOMHandler {
   }
 
   resume() {
-    if (this.domElements.particleCustomisation.element.matches(":popover-open")) return;
+    if (this.domElements.pCustom.element.matches(":popover-open")) return;
     this.paused = false;
     if (this.mouseDown2 === true) this.mouseDown = true;
     if (this.mouseEvent === "multi") this.multi();
@@ -664,6 +682,6 @@ export class DOMHandler {
       .concat(this.domElements.toggles)
       .flat())
       element.remove();
-    this.domElements.particleCustomisation.content.dispose();
+    this.domElements.pCustom.content.dispose();
   }
 }

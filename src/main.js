@@ -267,7 +267,8 @@ class SimulationMain extends DOMHandler {
     .style.setProperty(
       "transform",
       `translate(${
-        getComputedStyle(document.querySelector(".settings.right > .innerSettings")).width
+        getComputedStyle(document.querySelector(".settings.right > .inner-settings"))
+          .width
       })`
     );
   document
@@ -275,7 +276,8 @@ class SimulationMain extends DOMHandler {
     .style.setProperty(
       "transform",
       `translate(${-parseInt(
-        getComputedStyle(document.querySelector(".settings.left > .innerSettings")).width,
+        getComputedStyle(document.querySelector(".settings.left > .inner-settings"))
+          .width,
         10
       )}px)`
     );
