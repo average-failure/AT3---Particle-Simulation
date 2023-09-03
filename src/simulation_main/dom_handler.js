@@ -62,26 +62,56 @@ export class DOMHandler {
         "transform",
         `translate(${getComputedStyle(right.inner).width})`
       );
+      for (const child of right.settings.getElementsByTagName("*")) {
+        child.setAttribute("tabindex", "-1");
+      }
       left.settings.style.setProperty(
         "transform",
         `translate(${-parseInt(getComputedStyle(left.inner).width, 10)}px)`
       );
-      document.querySelector(".settings.right > .arrow").addEventListener("click", () => {
-        right.settings.style.setProperty(
-          "transform",
-          `translate(${right.toggled ? getComputedStyle(right.inner).width : "0px"})`
-        );
-        right.toggled = !right.toggled;
-      });
-      document.querySelector(".settings.left > .arrow").addEventListener("click", () => {
-        left.settings.style.setProperty(
-          "transform",
-          `translate(${
-            left.toggled ? -parseInt(getComputedStyle(left.inner).width, 10) : 0
-          }px)`
-        );
-        left.toggled = !left.toggled;
-      });
+      for (const child of left.settings.getElementsByTagName("*")) {
+        child.setAttribute("tabindex", "-1");
+      }
+      document
+        .querySelector(".settings.right > .arrow")
+        .addEventListener("click", function () {
+          this.innerHTML = `<p>${right.toggled ? "🞀" : "🞂"}</p>`;
+          right.settings.style.setProperty(
+            "transform",
+            `translate(${right.toggled ? getComputedStyle(right.inner).width : "0px"})`
+          );
+          if (right.toggled) {
+            for (const child of right.settings.getElementsByTagName("*")) {
+              child.setAttribute("tabindex", "-1");
+            }
+          } else {
+            for (const child of right.settings.getElementsByTagName("*")) {
+              child.removeAttribute("tabindex");
+            }
+          }
+          right.toggled = !right.toggled;
+        });
+      document
+        .querySelector(".settings.left > .arrow")
+        .addEventListener("click", function () {
+          this.innerHTML = `<p>${left.toggled ? "🞂" : "🞀"}</p>`;
+          left.settings.style.setProperty(
+            "transform",
+            `translate(${
+              left.toggled ? -parseInt(getComputedStyle(left.inner).width, 10) : 0
+            }px)`
+          );
+          if (left.toggled) {
+            for (const child of left.settings.getElementsByTagName("*")) {
+              child.setAttribute("tabindex", "-1");
+            }
+          } else {
+            for (const child of left.settings.getElementsByTagName("*")) {
+              child.removeAttribute("tabindex");
+            }
+          }
+          left.toggled = !left.toggled;
+        });
     }
   }
 
