@@ -5,8 +5,12 @@ export const settings = {
       this.cell_size = (this.max_radius - this.min_radius) / 2;
       return this.cell_size;
     },
-    max_radius: 100,
-    min_radius: 3,
+    get max_radius() {
+      return 100;
+    },
+    get min_radius() {
+      return 3;
+    },
     get max_mass() {
       delete this.max_mass;
       this.max_mass = this.max_radius * this.mass_radius_ratio;
@@ -27,7 +31,9 @@ export const settings = {
       this.max_random_radius = this.max_radius / 4;
       return this.max_random_radius;
     },
-    mass_radius_ratio: 10,
+    get mass_radius_ratio() {
+      return 10;
+    },
   },
   variables: {
     gravity: 9.8,

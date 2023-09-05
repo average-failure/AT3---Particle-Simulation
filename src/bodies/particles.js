@@ -40,9 +40,9 @@ export class Particle {
     );
     this.ratio = ratio || this.mass / this.r;
 
-    if (colour) {
+    if (colour && colour !== Particle.getColour(this.vx, this.vy)) {
       this.colour = colour;
-      this.updateColour = () => {};
+      this.noColourChange = true;
     }
     this.updateColour();
 
@@ -164,6 +164,7 @@ export class Particle {
   }
 
   updateColour() {
+    if (this.noColourChange) return;
     this.colour = Particle.getColour(this.vx, this.vy);
   }
 
