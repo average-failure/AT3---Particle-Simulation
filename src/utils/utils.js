@@ -335,7 +335,6 @@ export const circleCollision = (c1, c2, mode, cor) => {
       c2.y = c1.y - r * Math.sin(angle);
       break;
     case "both":
-      // TODO: do this properly
       const temp = [c1.x, c1.y];
 
       c1.x = c2.x + r * Math.cos(angle);
